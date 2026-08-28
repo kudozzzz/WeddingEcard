@@ -1,5 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  // Wraps every `hover:` utility in @media (hover: hover), so touch devices
+  // never latch a hover state — see CLAUDE.md §S5.
+  future: { hoverOnlyWhenSupported: true },
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {

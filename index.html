@@ -1,22 +1,36 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- charset must stay first: the HTML spec requires it inside the first
+         1024 bytes, so nothing may be hoisted above it. -->
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-    <!-- Two families' names, four photographs, three addresses. Link-shareable, never indexed. -->
-    <meta name="robots" content="noindex, nofollow" />
-
-    <title>Ankit &amp; Srishti</title>
-    <meta name="theme-color" content="#F7DAC6" />
-
-    <!-- WhatsApp link preview. og-image.jpg is deliberately date-free so the
-         scratch reveal in S2 is not spoiled in the chat thread. -->
+    <!-- ==================================================================
+         LINK PREVIEW TAGS — KEEP THESE AT THE TOP OF <head>.
+         WhatsApp's crawler reads only the first few KB of the head, so these
+         sit above every stylesheet, script, preconnect and font link.
+         og-image.jpg is deliberately date-free so the scratch reveal in S2 is
+         not spoiled in the chat thread.
+         ================================================================== -->
     <meta property="og:title" content="Ankit &amp; Srishti — An Invitation Awaits" />
     <meta property="og:description" content="Join us in Ghaziabad as we celebrate." />
     <meta property="og:image" content="https://ankit-srishti.vercel.app/img/og/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://ankit-srishti.vercel.app/img/og/og-image.jpg" />
+
+    <title>Ankit &amp; Srishti</title>
+
+    <!-- Two families' names, four photographs, three addresses. Link-shareable, never indexed.
+         Hard rule 3 — this tag stays active. It was briefly commented out to test whether
+         iOS WhatsApp honours noindex when generating previews; that was a false lead (the
+         phone was hitting a hostname that does not exist), and noindex is not a suspect. -->
+    <meta name="robots" content="noindex, nofollow" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#F7DAC6" />
 
     <link rel="icon" type="image/jpeg" href="/img/og/og-image.jpg" />
 

@@ -6,7 +6,7 @@ import { GoldRule, CornerOrnaments } from './Ornaments.jsx';
  * S2 — Scratch card.
  *
  * The date underneath is real DOM and always present; the canvas above it is
- * erased with destination-out compositing until 45% is cleared, at which point
+ * erased with destination-out compositing until 28% is cleared, at which point
  * the rest fades and confetti fires. Hard rule 1 is satisfied because the date
  * is never *visible* in S2 until the guest reveals it.
  *
@@ -16,9 +16,14 @@ import { GoldRule, CornerOrnaments } from './Ornaments.jsx';
 
 const CARD_W = 300;
 const CARD_H = 190;
-const BRUSH_R = 22;
-const REVEAL_AT = 0.45;      // §S2
+const BRUSH_R = 25;          // FIX 4 — was 22
+const REVEAL_AT = 0.28;      // FIX 4 — was 0.45; two or three swipes should do it
 const SAMPLE_EVERY = 12;     // moves between alpha samples — sampling is costly
+
+/* Guards so a single tap (or one stray drag) cannot clear the card outright.
+   Both must be satisfied before auto-reveal can fire. */
+const MIN_MOVES = 3;
+const MIN_CLEARED = 0.08;
 const FALLBACK_AFTER_MS = 10000;
 
 const CONFETTI_COLOURS = ['#AF8C3D', '#C9A961', '#791D2A', '#F0E8D6', '#1D234F'];
@@ -194,6 +199,20 @@ export default function ScratchCard() {
 
   /* ------------------------------------------------------- pointer handlers */
 
+  /**
+   * Auto-reveal, guarded. Requires real scratching: at least MIN_MOVES pointer
+   * moves AND MIN_CLEARED of the surface gone, on top of the REVEAL_AT
+   * threshold. Without this a single tap-and-hold on a small card could clear
+   * enough area to trip the threshold immediately.
+   */
+  const tryAutoReveal = () => {
+    if (doneRef.current) return;
+    if (movesRef.current < MIN_MOVES) return;
+    const cleared = clearedFraction();
+    if (cleared < MIN_CLEARED) return;
+    if (cleared >= REVEAL_AT) reveal();
+  };
+
   const pointAt = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -242,9 +261,7 @@ export default function ScratchCard() {
     lastRef.current = p;
 
     movesRef.current += 1;
-    if (movesRef.current % SAMPLE_EVERY === 0 && clearedFraction() >= REVEAL_AT) {
-      reveal();
-    }
+    if (movesRef.current % SAMPLE_EVERY === 0) tryAutoReveal();
   };
 
   const endStroke = (e) => {
@@ -256,7 +273,7 @@ export default function ScratchCard() {
     } catch {
       /* ignore */
     }
-    if (!doneRef.current && clearedFraction() >= REVEAL_AT) reveal();
+    tryAutoReveal();
   };
 
   /* --------------------------------------------- 10s accessibility fallback */
@@ -353,7 +370,7 @@ export default function ScratchCard() {
         <button
           type="button"
           onClick={() => reveal()}
-          className="small-caps mt-4"
+          className="tappable small-caps mt-4"
           style={{
             color: 'var(--gold-text)',
             border: '1px solid var(--gold)',

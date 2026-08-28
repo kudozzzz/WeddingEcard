@@ -320,18 +320,52 @@ Page scroll is **locked** (`overflow: hidden` on body) until the envelope opens.
 - Below: `Tap the seal to open` in Great Vibes, `--maroon`.
 - The seal has a slow breathing pulse (`scale 1 → 1.04 → 1`, 2.6s, infinite) to signal it's tappable.
 
-**On tap** (the whole envelope is the hit target, not just the seal):
-1. Seal fades and scales out (0.3s).
-2. Flap rotates open: `rotateX(0deg → -165deg)`, `transform-origin: top`, parent `perspective: 1200px`, 0.8s.
-3. Whole envelope scales to 1.15 and fades out (0.5s, starting at 0.5s).
-4. Body scroll unlocks; smooth-scroll to S2.
-5. Audio starts (this tap is the user gesture that permits playback — see §6).
-6. Write `sessionStorage.setItem('envelopeOpened','1')`.
+### S1 is a FIXED OVERLAY, not a flow section
+
+S1 renders at `position: fixed; inset: 0; z-index: 60`, above the page. S2–S8 lay out
+normally with **S2 at the top of the document**. Scroll stays locked via `overflow: hidden`
+on `html` **and** `body` while the overlay is up.
+
+This is not cosmetic. As a flow section, S1 occupied a full viewport of document height, and
+unmounting it shifted everything below up while a scroll animation was still running — the
+browser clamped mid-animation and the page visibly jumped down, snapped up, then settled.
+As an overlay the document height never changes, so nothing shifts.
+
+> **There is no scroll-to-S2 anywhere.** The guest is already at the top of the document.
+> Do not add one, and do not "fix" any future scroll issue by delaying a scroll call — layout
+> shift was the problem, never timing. Locking `body` alone is also not enough: the base
+> stylesheet sets `overflow-x: hidden` on body, which forces `overflow-y` to compute to `auto`.
+
+**On tap** (the whole envelope is the hit target, not just the seal) — total ~3.3s, staged so
+it reads as an envelope being opened rather than a page transition:
+
+| At | What | Detail |
+|---|---|---|
+| 0.00s | seal presses in | `scale 1 → 0.94`, 0.15s — tactile response to the tap |
+| 0.15s | seal lifts away | `scale 0.94 → 1.18`, `opacity 1 → 0`, 0.5s, ease-out |
+| 0.65s | hold | 0.15s of stillness |
+| 0.80s | flap opens | `rotateX 0 → -172deg`, 1.4s, `transform-origin: top`, parent `perspective: 1400px`, `cubic-bezier(0.34, 0.02, 0.15, 1)` |
+| ~1.57s | interior appears | at ~55% of the flap's rotation, a soft inner shadow fades in at the top of the body so it reads as hollow (0.6s) |
+| 2.20s | hold | 0.2s |
+| 2.40s | envelope leaves | `scale 1 → 1.06`, `translateY 0 → -8px`, `opacity 1 → 0`, 0.9s ease-in-out |
+| 2.60s | page cross-fades in | overlay `opacity 1 → 0`, 0.7s |
+| 3.35s | overlay unmounts | scroll already unlocked at 2.40s |
+
+Also on tap: audio starts (this tap is the user gesture that permits playback — see §6), and
+`sessionStorage.setItem('envelopeOpened','1')`.
+
+**The flap is two-sided.** The rotator carries `transform-style: preserve-3d`; each face is
+clipped **individually** (`clip-path` on the rotator itself flattens the 3D context and kills
+the underside). The underside is a lighter crimson **`#C25A72`** so the fold reads as paper
+with two sides, not a flat plane disappearing. Its clip path is the flap shape mirrored about
+the box's horizontal centre — the face is rotated `180deg`, which mirrors it back — otherwise
+the underside appears at the BOTTOM of the envelope. A soft shadow travels down the envelope
+face as the flap lifts off it.
 
 On mount, if `sessionStorage.envelopeOpened === '1'`, skip S1 entirely and render from S2 with
 scroll already unlocked. Guests reopening the link from WhatsApp should not re-do the gate.
 
-**Fallback:** if nothing is tapped for 6 seconds, run the same open sequence automatically.
+**Fallback:** if nothing is tapped for **15 seconds**, run the same open sequence automatically.
 WhatsApp WebView on older Android sometimes swallows the first touch event.
 
 ### S2 — Save the Date
@@ -350,12 +384,19 @@ WhatsApp WebView on older Android sometimes swallows the first touch event.
   135°) plus a faint diagonal shimmer and the words `SCRATCH TO REVEAL` in small caps at ~35% opacity.
 
 Implementation notes that matter:
-- `ctx.globalCompositeOperation = 'destination-out'`, brush = `arc()` radius 22, and interpolate
+- `ctx.globalCompositeOperation = 'destination-out'`, brush = `arc()` radius **25**, and interpolate
   between consecutive pointer positions or fast swipes leave gaps.
 - Use **pointer events** (`pointerdown`/`pointermove`/`pointerup`), not separate mouse+touch handlers.
 - `touch-action: none` on the canvas so scratching doesn't scroll the page.
 - Size the canvas by `devicePixelRatio` or it renders blurry on phones.
-- Sample the alpha channel every ~12 moves (not every move — it's expensive). At **45% cleared**,
+- Guard against accidental reveal: auto-reveal requires **at least 3 `pointermove` events AND
+  8% cleared** before the 28% threshold is even considered. Without it a single tap-and-hold
+  can trip the threshold on a small card. Target feel: two or three diagonal swipes.
+- The erase brush must be **fully opaque** (`fillStyle = 'rgba(0,0,0,1)'`) once
+  `destination-out` is set. In that mode the *source alpha* is what gets removed, and the
+  fillStyle still holds the shimmer gradient — whose alpha peaks at 0.34, so dabs would erase
+  only a third and leave a gold ghost over the date that no amount of rubbing clears.
+- Sample the alpha channel every ~12 moves (not every move — it's expensive). At **28% cleared**,
   animate the canvas opacity to 0 over 0.4s and fire confetti.
 - Confetti: two bursts from `{y:0.6}`, `particleCount: 90`, spread 70, colours
   `['#AF8C3D','#C9A961','#791D2A','#F0E8D6','#1D234F']`.
@@ -509,13 +550,34 @@ Centred, generous vertical padding, then the site ends.
 The owner supplies the track. **Place his MP3 at `public/audio/theme.mp3`.** It is not
 bundled with this spec — do not substitute a placeholder track or fetch one from anywhere.
 
+### Encoding
+
 Compress before committing (the raw file is ~3MB stereo, which is too heavy for 4G):
 
 ```bash
-ffmpeg -i original.mp3 -ac 1 -b:a 72k -map_metadata -1 public/audio/theme.mp3
+ffmpeg -y -i <source> -vn -ac 1 -b:a 72k -map_metadata -1 public/audio/theme.mp3
 ```
 
-Mono at 72kbps is fine for background ambience on phone speakers and lands around 1.4MB.
+Mono at 72kbps is fine for background ambience on phone speakers and lands around 1.27MB.
+
+**No limiter, no compressor, no gain reduction.** A previous encode ran the track through
+`alimiter` to pull the peaks down; it ducked gain on loud passages and released between them,
+which produced an audible **pumping** artifact mid-track. That is worse than the problem it
+was solving. Do not reintroduce `alimiter`, `acompressor`, `adeclip`, `loudnorm`, or any
+other dynamics filter — encode the source as-is.
+
+**The shipped file, measured (`ffprobe` + `ffmpeg -af volumedetect`):**
+
+| | |
+|---|---|
+| Codec / channels | MP3, **mono**, 44.1 kHz |
+| Bitrate | 72k requested; **64 kbps** average as encoded |
+| Duration | 2:42 (162.9s) |
+| Size | **1.24 MB** (1,303,657 bytes) |
+| Peak | **0.0 dBFS** |
+| Mean | -14.0 dB |
+
+The track loops with an audible seam at 2:42. **That is decided — leave it.**
 
 **Playback rules:**
 
@@ -526,8 +588,14 @@ Mono at 72kbps is fine for background ambience on phone speakers and lands aroun
   after an `await`. This is the entire reason the envelope gate exists from a technical standpoint.
 - Wrap `.play()` in `.catch(() => setMuted(true))`. If the browser refuses, the site must carry
   on silently with the toggle showing muted. Never let a rejected play promise throw.
-- Fade in over ~1.5s via a `setInterval` ramping `audio.volume` from 0 to 0.35. Starting at full
-  volume in a quiet room is how people close the tab.
+- Fade in over ~1.5s to 0.35. Starting at full volume in a quiet room is how people close the tab.
+- **Do not ramp with `setInterval`.** Stepping `HTMLMediaElement.volume` on a coarse timer makes
+  every step an audible discontinuity — zipper noise, layered on top of whatever else is wrong.
+  Use a **Web Audio `GainNode` with `linearRampToValueAtTime`**, which is sample-accurate, and
+  keep a `requestAnimationFrame` volume ramp as the fallback for when Web Audio is unavailable.
+  `createMediaElementSource` can only be called once per element, so build the graph once and
+  guard it; when the graph is live the element runs at `volume = 1` and gain is the only control.
+- Ramp down over ~180ms before `pause()` on mute. Cutting gain dead also clicks.
 - Target volume 0.35, not 1.0.
 - Mount the `<audio>` element **once, at App level**, and control it via ref. If it lives inside a
   component that re-renders on scroll, the track restarts and guests will hear it stutter.

@@ -25,7 +25,7 @@ export default function Gallery() {
           return (
             <figure
               key={src}
-              className="shrink-0 snap-center overflow-hidden rounded-xl"
+              className="tappable shrink-0 snap-center overflow-hidden rounded-xl"
               style={{
                 width: '74vw',
                 maxWidth: 320,

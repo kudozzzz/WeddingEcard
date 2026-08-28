@@ -54,22 +54,16 @@ function VenueTile({ event }) {
           {event.address}
         </p>
 
+        {/* Fill state is CSS-only (.btn-directions). It used to be set from
+            onMouseEnter/onMouseLeave, which is what left the button stuck
+            highlighted: on touch, mouseenter fires on tap and mouseleave never
+            arrives once Maps takes over, so the inline style persisted. */}
         <a
           href={event.maps}
           target="_blank"
           rel="noopener noreferrer"
-          className="small-caps mt-5 inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 transition-colors duration-200 hover:text-white focus-visible:text-white"
-          style={{
-            border: '1px solid var(--gold)',
-            color: 'var(--gold)',
-            minHeight: 44,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--gold)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
+          className="tappable btn-directions small-caps mt-5 inline-flex items-center gap-1.5 rounded-full px-5 py-2.5"
+          style={{ minHeight: 44 }}
         >
           <PinIcon size={12} />
           Directions

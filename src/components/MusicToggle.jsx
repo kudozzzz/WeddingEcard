@@ -1,20 +1,24 @@
 /**
- * Persistent music toggle, fixed bottom-right.
+ * Persistent music toggle, fixed bottom-right (§6).
  *
- * BUILD STEP 1: shell only, inert. The audio element, the envelope-tap unlock,
- * the 1.5s volume ramp to 0.35, sessionStorage mute state and the playing-state
- * animation land in build step 6 (§10). It is rendered now so its position and
- * 44px hit target can be checked on a real phone; in the finished build it
- * appears only after the envelope opens.
+ * Appears only after the envelope opens. The element itself lives at App level
+ * and is controlled by ref — this is only the control surface.
+ *
+ * On iOS the hardware silent switch mutes HTML5 audio with no error and no way
+ * to detect it. That is expected, and it is exactly why this button stays
+ * visible even when nothing is audible: it is what tells those guests audio
+ * exists at all.
  */
-export default function MusicToggle() {
+export default function MusicToggle({ muted, onToggle }) {
   return (
     <button
       type="button"
-      aria-label="Play music"
-      className="fixed bottom-5 right-5 z-50 flex items-center justify-center rounded-full"
+      onClick={onToggle}
+      aria-label={muted ? 'Play music' : 'Mute music'}
+      aria-pressed={!muted}
+      className="tappable fixed bottom-5 right-5 z-50 flex items-center justify-center rounded-full"
       style={{
-        width: 44,
+        width: 44, // 44px minimum — these guests are not all 25 years old
         height: 44,
         backgroundColor: 'var(--paper-deep)',
         border: '1px solid var(--gold)',
@@ -22,8 +26,42 @@ export default function MusicToggle() {
         boxShadow: '0 4px 14px -6px rgba(58,52,42,0.5)',
       }}
     >
-      <SpeakerMutedIcon />
+      <style>{`
+        @keyframes music-bar {
+          0%, 100% { transform: scaleY(0.4); }
+          50%      { transform: scaleY(1); }
+        }
+        .music-bar { transform-origin: center bottom; animation: music-bar 900ms ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .music-bar { animation: none; transform: scaleY(0.7); } }
+      `}</style>
+
+      {muted ? <SpeakerMutedIcon /> : <PlayingBars />}
     </button>
+  );
+}
+
+/** Three animated bars, so it reads unmistakably as the music control. */
+function PlayingBars() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+      {[
+        { x: 3.5, delay: '0ms' },
+        { x: 8, delay: '150ms' },
+        { x: 12.5, delay: '300ms' },
+      ].map((b) => (
+        <rect
+          key={b.x}
+          className="music-bar"
+          x={b.x}
+          y="4"
+          width="2"
+          height="10"
+          rx="1"
+          fill="currentColor"
+          style={{ animationDelay: b.delay }}
+        />
+      ))}
+    </svg>
   );
 }
 

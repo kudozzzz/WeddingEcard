@@ -93,6 +93,49 @@
     box-shadow: 0 6px 24px -14px rgba(58, 52, 42, 0.45);
   }
 
+  /**
+   * Every tappable surface.
+   *
+   * On touch devices :hover latches — the browser applies it on tap and never
+   * clears it — and the element keeps :focus the whole time an external app
+   * (Google Maps) is open, so it is still highlighted when the guest comes
+   * back. The rules are therefore:
+   *
+   *   - resting state is the default; hover styling is gated behind a real
+   *     pointer via @media (hover: hover) and (pointer: fine)
+   *   - :focus-visible, never :focus, so the ring is keyboard-only
+   *   - no grey flash on tap
+   */
+  .tappable {
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tappable:focus {
+    outline: none;
+  }
+  .tappable:focus-visible {
+    outline: 2px solid var(--gold-text);
+    outline-offset: 3px;
+  }
+
+  /* S5 Directions button. Fills only where a pointer can genuinely hover;
+     :active gives touch its press feedback and releases with the finger. */
+  .btn-directions {
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    background-color: transparent;
+    transition: background-color 200ms ease, color 200ms ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .btn-directions:hover {
+      background-color: var(--gold);
+      color: #ffffff;
+    }
+  }
+  .btn-directions:active {
+    background-color: var(--gold);
+    color: #ffffff;
+  }
+
   .hidden-scrollbar {
     scrollbar-width: none;
     -ms-overflow-style: none;
