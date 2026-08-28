@@ -49,10 +49,16 @@ const write = (key, value) => {
 export default function App() {
   const [gateOpen, setGateOpen] = useState(() => read('envelopeOpened') === '1');
   const [scrollLocked, setScrollLocked] = useState(() => read('envelopeOpened') !== '1');
+  // `muted` is the guest's stored INTENT. `playing` is what the element is
+  // actually doing. They are not the same thing: after a reload there is no
+  // user gesture, so playback is refused and intent alone would make the
+  // toggle claim to be playing while the page is silent.
   const [muted, setMuted] = useState(() => read('muted') === '1');
+  const [playing, setPlaying] = useState(false);
 
   const audioRef = useRef(null);
   const rafRef = useRef(null);
+  const resumeRef = useRef(null);
   // Ref, not state: this must be readable and settable synchronously inside the
   // tap handler, before any re-render could let a second call through.
   const startedRef = useRef(false);
@@ -142,12 +148,23 @@ export default function App() {
     rampVolume(TARGET_VOLUME, FADE_MS);
   }, [rampVolume, safePlay]);
 
+  const detachResume = useCallback(() => {
+    if (resumeRef.current) {
+      document.removeEventListener('pointerdown', resumeRef.current);
+      resumeRef.current = null;
+    }
+  }, []);
+
   const toggleMute = useCallback(() => {
     const el = audioRef.current;
-    const next = !mutedRef.current;
+    if (!el) return;
+    // Decide from what the element is really doing, so the button always does
+    // what its icon promises.
+    const next = !el.paused;   // currently audible -> next state is muted
     setMuted(next);
     write('muted', next ? '1' : '0');
-    if (!el) return;
+    // A manual mute cancels any armed first-tap resume.
+    detachResume();
 
     if (next) {
       // Short ramp down, then pause — cutting volume dead also clicks.
@@ -160,7 +177,67 @@ export default function App() {
       safePlay(el);
       rampVolume(TARGET_VOLUME, FADE_MS);
     }
-  }, [rampVolume, safePlay]);
+  }, [rampVolume, safePlay, detachResume]);
+
+  /* The button reflects reality, not intent: these events are the only thing
+     that sets `playing`. */
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    el.addEventListener('play', onPlay);
+    el.addEventListener('playing', onPlay);
+    el.addEventListener('pause', onPause);
+    el.addEventListener('ended', onPause);
+    return () => {
+      el.removeEventListener('play', onPlay);
+      el.removeEventListener('playing', onPlay);
+      el.removeEventListener('pause', onPause);
+      el.removeEventListener('ended', onPause);
+    };
+  }, []);
+
+  /**
+   * Resume after a reload.
+   *
+   * A reload skips the envelope (sessionStorage), so there is no user gesture
+   * and play() is refused. That refusal is correct and must not be fought.
+   * Instead, arm a one-shot listener so the guest's very first tap anywhere
+   * resumes the track.
+   */
+  useEffect(() => {
+    if (!gateOpen) return;          // the envelope tap handles the first visit
+    if (read('muted') === '1') return;
+    const el = audioRef.current;
+    if (!el || !el.paused) return;
+
+    let cancelled = false;
+    const tryPlay = () => {
+      const node = audioRef.current;
+      if (cancelled || !node) return;
+      node.volume = 0;
+      const p = node.play();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+      rampVolume(TARGET_VOLUME, FADE_MS);
+    };
+
+    // Optimistic first attempt — some browsers still allow it.
+    const p = el.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch(() => {
+        if (cancelled) return;
+        resumeRef.current = tryPlay;
+        document.addEventListener('pointerdown', tryPlay, { once: true });
+      });
+    }
+    if (!el.paused) rampVolume(TARGET_VOLUME, FADE_MS);
+
+    return () => {
+      cancelled = true;
+      detachResume();
+    };
+  }, [gateOpen, rampVolume, detachResume]);
 
   useEffect(() => cancelRamp, []);
 
@@ -205,7 +282,7 @@ export default function App() {
       {!gateOpen && <Envelope onOpen={handleOpen} startAudio={startAudio} />}
 
       {/* Appears only after the envelope opens (§6). */}
-      {gateOpen && <MusicToggle muted={muted} onToggle={toggleMute} />}
+      {gateOpen && <MusicToggle playing={playing} onToggle={toggleMute} />}
     </>
   );
 }

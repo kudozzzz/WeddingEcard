@@ -1,4 +1,5 @@
 import { EVENTS, IMAGE_SIZES } from '../data/events.js';
+import Reveal from './Reveal.jsx';
 import { CornerOrnaments, PinIcon } from './Ornaments.jsx';
 
 /**
@@ -10,11 +11,15 @@ import { CornerOrnaments, PinIcon } from './Ornaments.jsx';
 export default function Venues() {
   return (
     <section id="venues" className="relative z-10 px-6 py-20">
-      <h2 className="section-heading mb-10">The Venue</h2>
+      <Reveal as="h2" className="section-heading mb-10">
+        The Venue
+      </Reveal>
 
       <div className="mx-auto grid max-w-6xl gap-6 min-[900px]:grid-cols-3">
-        {EVENTS.map((event) => (
-          <VenueTile key={event.id} event={event} />
+        {EVENTS.map((event, i) => (
+          <Reveal key={event.id} index={i}>
+            <VenueTile event={event} />
+          </Reveal>
         ))}
       </div>
     </section>

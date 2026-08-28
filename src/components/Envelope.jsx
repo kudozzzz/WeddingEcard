@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AS_MONOGRAM_PATH, AS_MONOGRAM_VIEWBOX } from '../data/monogram.js';
+import { prefersReducedMotion } from '../lib/motion.js';
 
 /**
  * S1 — Envelope gate.
@@ -65,9 +66,9 @@ export const T = {
 
 const AUTO_OPEN_MS = 15000; // FIX 2 — was 6s
 
-export const prefersReducedMotion = () =>
-  typeof window !== 'undefined' &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Re-exported so App can keep importing it from here; the single definition
+// lives in lib/motion.js so the two paths can never drift apart.
+export { prefersReducedMotion };
 
 export default function Envelope({ onOpen, startAudio }) {
   const [opening, setOpening] = useState(false);

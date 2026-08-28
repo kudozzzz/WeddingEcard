@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { COUNTDOWN_TARGET } from '../data/events.js';
+import Reveal from './Reveal.jsx';
+import { prefersReducedMotion } from '../lib/motion.js';
 
 /**
  * S3 — Counting the Moments.
@@ -13,9 +15,7 @@ import { COUNTDOWN_TARGET } from '../data/events.js';
 const UNITS = ['Days', 'Hours', 'Minutes', 'Seconds'];
 const CONFETTI_COLOURS = ['#AF8C3D', '#C9A961', '#791D2A', '#F0E8D6', '#1D234F'];
 
-const reducedMotion = () =>
-  typeof window !== 'undefined' &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reducedMotion = prefersReducedMotion;
 
 /** Remaining time to the target, floored at zero. Never returns negatives. */
 function remaining(now = Date.now()) {
@@ -92,7 +92,9 @@ export default function Countdown() {
       className="relative z-10 flex flex-col items-center px-6 py-20"
     >
       <Keyframes />
-      <h2 className="section-heading mb-10">Counting the Moments</h2>
+      <Reveal as="h2" className="section-heading mb-10">
+        Counting the Moments
+      </Reveal>
 
       {state.reached ? (
         <p className="font-script" style={{ color: 'var(--maroon)', fontSize: '2.6rem' }}>

@@ -1,4 +1,5 @@
 import ScratchCard from './ScratchCard.jsx';
+import Reveal from './Reveal.jsx';
 
 /**
  * S2 — Save the Date.
@@ -12,8 +13,12 @@ export default function SaveTheDate() {
       id="save-the-date"
       className="relative z-10 flex flex-col items-center px-6 py-20"
     >
-      <h2 className="section-heading mb-10">Save the Date</h2>
-      <ScratchCard />
+      <Reveal as="h2" className="section-heading mb-10">
+        Save the Date
+      </Reveal>
+      <Reveal>
+        <ScratchCard />
+      </Reveal>
     </section>
   );
 }

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { EVENTS } from '../data/events.js';
+import Reveal from './Reveal.jsx';
+import { prefersReducedMotion } from '../lib/motion.js';
 import {
   CornerOrnaments,
   EventMotif,
@@ -25,11 +27,15 @@ import {
 export default function Events() {
   return (
     <section id="events" className="relative z-10 px-6 py-20">
-      <h2 className="section-heading mb-10">Wedding Events</h2>
+      <Reveal as="h2" className="section-heading mb-10">
+        Wedding Events
+      </Reveal>
 
       <div className="mx-auto grid max-w-6xl gap-6 min-[900px]:grid-cols-3">
         {EVENTS.map((event, i) => (
-          <EventCard key={event.id} event={event} index={i} />
+          <Reveal key={event.id} index={i}>
+            <EventCard event={event} index={i} />
+          </Reveal>
         ))}
       </div>
     </section>
@@ -144,8 +150,14 @@ function ArtPanel({ event, index }) {
   );
 }
 
-/** Slow float, so the cards feel alive. Killed by prefers-reduced-motion. */
+/**
+ * Slow float, so the cards feel alive.
+ *
+ * Gated in JS as well as CSS: the media query alone covers real browsers, but
+ * keeping the class off entirely means the animation never even starts.
+ */
 function FloatingMotif({ id, accent }) {
+  const reduced = prefersReducedMotion();
   return (
     <>
       <style>{`
@@ -153,7 +165,7 @@ function FloatingMotif({ id, accent }) {
         .motif-float { animation: motif-float 4s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) { .motif-float { animation: none; } }
       `}</style>
-      <span className="motif-float" style={{ lineHeight: 0 }}>
+      <span className={reduced ? undefined : 'motif-float'} style={{ lineHeight: 0 }}>
         <EventMotif id={id} color={accent} size={34} />
       </span>
     </>

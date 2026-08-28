@@ -1,4 +1,5 @@
 import { GoldRule, Flourish } from './Ornaments.jsx';
+import Reveal from './Reveal.jsx';
 
 /**
  * S8 — Thank You. The site ends here.
@@ -12,11 +13,16 @@ export default function ThankYou() {
       id="thank-you"
       className="relative z-10 flex flex-col items-center px-6 py-24 text-center"
     >
-      <Flourish width={120} />
+      <Reveal>
+        <Flourish width={120} />
+      </Reveal>
 
-      <h2 className="section-heading mt-5">With Love &amp; Gratitude</h2>
+      <Reveal as="h2" className="section-heading mt-5" index={1}>
+        With Love &amp; Gratitude
+      </Reveal>
 
-      <div
+      <Reveal
+        index={2}
         className="mt-6"
         style={{
           fontWeight: 300,
@@ -34,16 +40,18 @@ export default function ThankYou() {
         </p>
         <p className="mt-4">Your blessings are the finest gift we could ask for.</p>
         <p className="mt-4">Hope to see you there.</p>
-      </div>
+      </Reveal>
 
-      <GoldRule className="my-8" width="3rem" />
+      <Reveal index={3}>
+        <GoldRule className="my-8" width="3rem" />
+      </Reveal>
 
       {/* Italianno, not Great Vibes — otherwise "Anjali" reads as "anjali" (§3).
           ~20% up from the 1.9rem this would be in Great Vibes.
           This is the last thing on the page; nothing follows it. */}
-      <p className="font-signoff" style={{ color: 'var(--gold-text)', fontSize: '2.3rem' }}>
+      <Reveal as="p" index={4} className="font-signoff" style={{ color: 'var(--gold-text)', fontSize: '2.3rem' }}>
         Anjali &amp; Manish Kumar
-      </p>
+      </Reveal>
     </section>
   );
 }

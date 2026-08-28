@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { GoldRule, CornerOrnaments } from './Ornaments.jsx';
+import { prefersReducedMotion } from '../lib/motion.js';
 
 /**
  * S2 — Scratch card.
@@ -28,9 +29,7 @@ const FALLBACK_AFTER_MS = 10000;
 
 const CONFETTI_COLOURS = ['#AF8C3D', '#C9A961', '#791D2A', '#F0E8D6', '#1D234F'];
 
-const reduced = () =>
-  typeof window !== 'undefined' &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduced = prefersReducedMotion;
 
 const alreadyRevealed = () => {
   try {

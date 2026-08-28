@@ -4,18 +4,21 @@
  * Appears only after the envelope opens. The element itself lives at App level
  * and is controlled by ref — this is only the control surface.
  *
+ * The icon is driven by ACTUAL playback state, not by stored mute intent — it
+ * must never claim to be playing when the element is paused (§6).
+ *
  * On iOS the hardware silent switch mutes HTML5 audio with no error and no way
  * to detect it. That is expected, and it is exactly why this button stays
  * visible even when nothing is audible: it is what tells those guests audio
  * exists at all.
  */
-export default function MusicToggle({ muted, onToggle }) {
+export default function MusicToggle({ playing, onToggle }) {
   return (
     <button
       type="button"
       onClick={onToggle}
-      aria-label={muted ? 'Play music' : 'Mute music'}
-      aria-pressed={!muted}
+      aria-label={playing ? 'Mute music' : 'Play music'}
+      aria-pressed={playing}
       className="tappable fixed bottom-5 right-5 z-50 flex items-center justify-center rounded-full"
       style={{
         width: 44, // 44px minimum — these guests are not all 25 years old
@@ -35,7 +38,7 @@ export default function MusicToggle({ muted, onToggle }) {
         @media (prefers-reduced-motion: reduce) { .music-bar { animation: none; transform: scaleY(0.7); } }
       `}</style>
 
-      {muted ? <SpeakerMutedIcon /> : <PlayingBars />}
+      {playing ? <PlayingBars /> : <SpeakerMutedIcon />}
     </button>
   );
 }

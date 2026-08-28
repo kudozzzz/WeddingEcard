@@ -1,4 +1,5 @@
 import { EVENTS } from '../data/events.js';
+import Reveal from './Reveal.jsx';
 import { GoldDiamondRule, EventMotif } from './Ornaments.jsx';
 
 /**
@@ -13,17 +14,23 @@ import { GoldDiamondRule, EventMotif } from './Ornaments.jsx';
 export default function Wardrobe() {
   return (
     <section id="wardrobe" className="relative z-10 px-6 py-20">
-      <h2 className="section-heading">Wedding Wardrobe</h2>
-      <p
+      <Reveal as="h2" className="section-heading">
+        Wedding Wardrobe
+      </Reveal>
+      <Reveal
+        as="p"
+        index={1}
         className="mx-auto mt-3 max-w-md text-center"
         style={{ fontStyle: 'italic', color: 'var(--olive)', fontSize: '1.05rem' }}
       >
         A little something to inspire your look for each celebration
-      </p>
+      </Reveal>
 
       <div className="mx-auto mt-10 grid max-w-4xl gap-6 md:grid-cols-2">
-        {EVENTS.map((event) => (
-          <WardrobeTile key={event.id} event={event} />
+        {EVENTS.map((event, i) => (
+          <Reveal key={event.id} index={i}>
+            <WardrobeTile event={event} />
+          </Reveal>
         ))}
       </div>
     </section>
