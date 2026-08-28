@@ -1,0 +1,3 @@
+# reference/ is context for building the site, not assets — nothing in it ships (§11).
+# Excluding it keeps it out of every deploy upload.
+reference/

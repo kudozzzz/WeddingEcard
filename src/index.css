@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* surfaces */
+    --paper:        #F7DAC6;   /* page background — peach */
+    --paper-deep:   #FEF8F3;   /* card / tile background — LIGHTER than --paper */
+    --paper-edge:   #EFDCCB;   /* hairline borders */
+
+    /* metals & ink */
+    --gold:         #AF8C3D;   /* primary accent, rules, small caps */
+    --gold-light:   #C9A961;   /* gradients, shimmer highlight */
+    --gold-pale:    #E4D5AC;   /* scratch-card surface */
+    --gold-text:    #7E6226;   /* gold TEXT on --paper only — see §3 */
+    --ink:          #3A342A;   /* body copy */
+    --olive:        #796928;   /* secondary copy, taglines */
+
+    /* event accents */
+    --navy:         #1D234F;   /* Sangeet */
+    --haldi:        #C8891A;   /* Haldi */
+    --maroon:       #791D2A;   /* Wedding, envelope, seal */
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 400;
+    /* The page is a single narrow column; nothing may ever scroll sideways. */
+    overflow-x: hidden;
+  }
+
+  /* Photos below the fold all carry explicit width/height, so let the browser
+     reserve the box from the aspect ratio rather than reflowing on decode. */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@layer components {
+  /* The single strongest visual cue tying the whole page together (§3). */
+  .small-caps {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.7rem;
+    line-height: 1.4;
+  }
+
+  .font-script {
+    font-family: 'Great Vibes', cursive;
+    font-weight: 400;
+  }
+
+  /**
+   * Italianno — exactly one use: the S8 sign-off (§3).
+   *
+   * Great Vibes' capital A has no crossbar and is drawn identically to its
+   * lowercase a, so "Anjali" would read as "anjali". The string is correct;
+   * only the font changes. Italianno's strokes are much thinner, so the caller
+   * sets it ~20% larger than it would Great Vibes.
+   *
+   * The AS monogram is NOT type — it is the supplied SVG path (§S1). There is
+   * deliberately no .font-monogram class.
+   */
+  .font-signoff {
+    font-family: 'Italianno', 'Great Vibes', cursive;
+    font-weight: 400;
+  }
+
+  /* Section heading: Great Vibes, maroon. Used by every section. */
+  .section-heading {
+    font-family: 'Great Vibes', cursive;
+    color: var(--maroon);
+    font-size: clamp(2.25rem, 9vw, 3rem);
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  /* Shared card shell for S4 / S5 / S6 tiles. */
+  .paper-card {
+    background-color: var(--paper-deep);
+    border: 1px solid var(--paper-edge);
+    box-shadow: 0 6px 24px -14px rgba(58, 52, 42, 0.45);
+  }
+
+  .hidden-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .hidden-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Guests who ask for less motion get none of it. Animation lands in later
+   build steps; this guard is in place from the start so nothing slips past. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

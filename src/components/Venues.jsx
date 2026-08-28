@@ -1,0 +1,80 @@
+import { EVENTS, IMAGE_SIZES } from '../data/events.js';
+import { CornerOrnaments, PinIcon } from './Ornaments.jsx';
+
+/**
+ * S5 — The Venue.
+ *
+ * Same card shell as S4. Photos carry explicit width/height so the box is
+ * reserved before decode, and everything below the fold is lazy (§7).
+ */
+export default function Venues() {
+  return (
+    <section id="venues" className="relative z-10 px-6 py-20">
+      <h2 className="section-heading mb-10">The Venue</h2>
+
+      <div className="mx-auto grid max-w-6xl gap-6 min-[900px]:grid-cols-3">
+        {EVENTS.map((event) => (
+          <VenueTile key={event.id} event={event} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function VenueTile({ event }) {
+  const size = IMAGE_SIZES[event.photo];
+
+  return (
+    <article className="paper-card relative overflow-hidden rounded-2xl">
+      <img
+        src={event.photo}
+        alt={event.venue}
+        width={size.w}
+        height={size.h}
+        loading="lazy"
+        decoding="async"
+        className="aspect-[4/3] w-full rounded-t-2xl object-cover"
+      />
+
+      <div className="relative px-6 pb-7 pt-5 text-center">
+        <CornerOrnaments inset={10} size={16} />
+
+        <h3
+          className="font-script"
+          style={{ color: event.accent, fontSize: '2.1rem', lineHeight: 1.2 }}
+        >
+          {event.venue}
+        </h3>
+
+        <p className="small-caps mt-1.5" style={{ color: 'var(--gold)' }}>
+          {event.name}
+        </p>
+
+        <p className="mt-3" style={{ fontSize: '0.98rem', color: 'var(--olive)' }}>
+          {event.address}
+        </p>
+
+        <a
+          href={event.maps}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="small-caps mt-5 inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 transition-colors duration-200 hover:text-white focus-visible:text-white"
+          style={{
+            border: '1px solid var(--gold)',
+            color: 'var(--gold)',
+            minHeight: 44,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--gold)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+        >
+          <PinIcon size={12} />
+          Directions
+        </a>
+      </div>
+    </article>
+  );
+}
