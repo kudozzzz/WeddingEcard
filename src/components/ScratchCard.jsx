@@ -129,13 +129,17 @@ export default function ScratchCard() {
     ctx.fillStyle = s;
     ctx.fillRect(0, 0, w, h);
 
-    // SCRATCH TO REVEAL — small caps, letterspaced 0.18em, white at 35%.
+    // SCRATCH TO REVEAL — small caps, letterspaced 0.18em.
+    // Solid #3A2E11, no opacity reduction: it measures 4.21:1 against the
+    // darkest point of the gold gradient (--gold #AF8C3D) and 9.13:1 against
+    // the lightest (--gold-pale), so it stays readable across the whole
+    // surface. Size, tracking and small-caps treatment are unchanged.
     // Drawn per character because canvas letterSpacing is not universal.
     const label = 'SCRATCH TO REVEAL';
     const size = 11.2;
     const tracking = size * 0.18;
     ctx.font = `500 ${size}px "Cormorant Garamond", Georgia, serif`;
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillStyle = '#3A2E11';
     ctx.textBaseline = 'middle';
 
     const widths = [...label].map((ch) => ctx.measureText(ch).width);

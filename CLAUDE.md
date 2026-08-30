@@ -13,7 +13,7 @@ flow. Build what is specified.
 |---|---|
 | **Couple** | Ankit & Srishti (in that order, always) |
 | **Monogram** | `AS` — calligraphy, appears on the envelope wax seal |
-| **Hosts** | Anjali & Manish Kumar |
+| **Hosts** | Anjali & Manish |
 | **Surnames** | **Never print surnames for the couple.** Only "Ankit" and "Srishti" |
 | **Audience** | ~350–400 guests, Delhi NCR, majority on mid-range Android over 4G |
 | **Primary surface** | Opened from a WhatsApp message. Assume WhatsApp's in-app WebView, not Chrome |
@@ -155,7 +155,7 @@ surface the thing sits on**, not by what it is.
 **`--gold-text` is for text sitting directly on `--paper`, and nothing else:**
 
 - the letterspaced small-caps section labels (e.g. `AN INVITATION AWAITS` in S1)
-- any gold copy outside a card (e.g. the `Anjali & Manish Kumar` sign-off in S8)
+- any gold copy outside a card (e.g. the `Anjali & Manish` sign-off in S8)
 
 **`--gold` is unchanged and stays in use for:**
 
@@ -211,7 +211,7 @@ Google Fonts, three families only:
 
 | Role | Font | Treatment |
 |---|---|---|
-| Sign-off `Anjali & Manish Kumar` (S8) | **Italianno** | 2.3rem — ~20% up from the 1.9rem this would be in Great Vibes |
+| Sign-off `Anjali & Manish` (S8) | **Italianno** | 2.3rem — ~20% up from the 1.9rem this would be in Great Vibes |
 | Event names, section headings | **Great Vibes** | as-is |
 | Couple names, dates, numerals | **Cormorant Garamond** 400/500 | italic for names |
 | Taglines, attire lines, body | **Cormorant Garamond** 300/400 | — |
@@ -220,7 +220,7 @@ Google Fonts, three families only:
 Wide letter-spacing on small caps is the single strongest visual cue tying this to the
 wardrobe cards. Use it consistently.
 
-**Italianno is used in exactly one place** — the `Anjali & Manish Kumar` sign-off in S8.
+**Italianno is used in exactly one place** — the `Anjali & Manish` sign-off in S8.
 Nowhere else. Great Vibes keeps every section heading and every event name.
 
 The reason is legibility, not decoration: Great Vibes' capital `A` has no crossbar and is
@@ -533,7 +533,7 @@ Centred, generous vertical padding, then the site ends.
 > Hope to see you there.
 
 - Gold rule with centre dot.
-- Sign-off: `Anjali & Manish Kumar` — **Italianno**, ~2.3rem, `--gold`. This is the last
+- Sign-off: `Anjali & Manish` — **Italianno**, ~2.3rem, `--gold`. This is the last
   thing on the page; nothing follows it.
 
 ### Persistent — Music toggle
@@ -716,13 +716,13 @@ ornaments.
   second gate of any kind.
 - Do not add an `Add to Calendar` link, `.ics` generation, or any other download. This was
   specified once and removed deliberately — the S8 sign-off is the last thing on the page.
-- Do not use Great Vibes for the `Anjali & Manish Kumar` sign-off — that is Italianno, for
+- Do not use Great Vibes for the `Anjali & Manish` sign-off — that is Italianno, for
   the crossbar reason in §3. The `AS` monogram is not type at all; it is the supplied SVG path.
 - Do not regenerate the jaal patterns or the monogram procedurally, and do not rebuild floral
   ornament out of circles. The supplied `.svg` assets use pointed petals, continuous stems and
   curling tendrils — that is the whole difference. Use them as-is.
 - Do not put the wax seal in maroon with cream lettering. Cream wax, dark monogram (§S1).
-- Do not print surnames for Ankit or Srishti. Hosts are `Anjali & Manish Kumar`.
+- Do not print surnames for Ankit or Srishti. Hosts are `Anjali & Manish`.
 - Do not render `wardrobe-originals/*.png` on the page.
 - Do not reorder the gallery photos or the events.
 - Do not add localStorage — `sessionStorage` only, so a returning guest months later gets the full

@@ -50,7 +50,7 @@ export default function ThankYou() {
           ~20% up from the 1.9rem this would be in Great Vibes.
           This is the last thing on the page; nothing follows it. */}
       <Reveal as="p" index={4} className="font-signoff" style={{ color: 'var(--gold-text)', fontSize: '2.3rem' }}>
-        Anjali &amp; Manish Kumar
+        Anjali &amp; Manish
       </Reveal>
     </section>
   );
