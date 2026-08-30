@@ -71,22 +71,12 @@ export const EVENTS = [
 
 export const COUNTDOWN_TARGET = '2026-11-25T19:30:00+05:30';
 
-// Intrinsic pixel dimensions of the shipped WebP files. Rendered as explicit
-// width/height attributes so images reserve their box before decode (kills CLS).
+// Intrinsic pixel dimensions of the venue photographs, rendered as explicit
+// width/height so they reserve their box before decode (kills CLS).
+// Gallery photos live in data/gallery.js.
 export const IMAGE_SIZES = {
   '/img/venue/venue-evara.webp':     { w: 900, h: 600 },
   '/img/venue/venue-caracalla.webp': { w: 770, h: 513 },
   '/img/venue/venue-aurum.webp':     { w: 900, h: 600 },
-  '/img/gallery/gallery-1.webp':     { w: 506, h: 900 },
-  '/img/gallery/gallery-2.webp':     { w: 676, h: 900 },
-  '/img/gallery/gallery-3.webp':     { w: 900, h: 599 },
-  '/img/gallery/gallery-4.webp':     { w: 675, h: 900 },
 };
 
-// Owner's chosen sequence. Do not reorder or sort.
-export const GALLERY = [
-  '/img/gallery/gallery-1.webp',
-  '/img/gallery/gallery-2.webp',
-  '/img/gallery/gallery-3.webp',
-  '/img/gallery/gallery-4.webp',
-];

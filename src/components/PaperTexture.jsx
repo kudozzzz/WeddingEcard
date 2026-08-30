@@ -9,7 +9,14 @@
  */
 export default function PaperTexture() {
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-0 z-0"
+      // Promote to its own compositor layer. Otherwise this fixed layer is
+      // repainted on every layout change on the page, which shows up as jitter
+      // during the S2 unroll.
+      style={{ transform: 'translateZ(0)' }}
+    >
       {/* grain, underneath */}
       <div className="absolute inset-0" style={{ opacity: 0.03 }}>
         <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">

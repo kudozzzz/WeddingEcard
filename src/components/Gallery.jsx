@@ -1,15 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { GALLERY, IMAGE_SIZES } from '../data/events.js';
+import {
+  GALLERY,
+  GALLERY_SIZES,
+  LOOP,
+  CLONE_LEAD,
+  realIndex,
+} from '../data/gallery.js';
 import Reveal from './Reveal.jsx';
 import { prefersReducedMotion } from '../lib/motion.js';
 
 /**
  * S7 — Our Gallery.
  *
- * Infinite horizontal loop in both directions, using the clone technique:
- * the strip renders [3, 4, 1, 2, 3, 4, 1, 2] — the four real images with two
- * clones prepended and two appended. When a scroll settles inside a clone
+ * Infinite horizontal loop in both directions, using the clone technique: the
+ * strip renders the last CLONE_LEAD photos, then all of them, then the first
+ * CLONE_LEAD. Counts are derived from GALLERY.length — nothing here is tied to
+ * a specific number of photos. When a scroll settles inside a clone
  * zone, scrollLeft is silently shifted by exactly one full set, which lands on
  * the identical-looking real card. Snapping and smooth scrolling are turned off
  * for that single frame so the reposition is invisible.
@@ -18,19 +25,9 @@ import { prefersReducedMotion } from '../lib/motion.js';
  * gallery-3 is landscape; object-cover handles it, no special case.
  */
 
-const SET = GALLERY.length;    // 4 real images
-const LEAD = 2;                // clones prepended
-/** [3, 4, 1, 2, 3, 4, 1, 2] */
-const LOOP = [
-  GALLERY[SET - 2],
-  GALLERY[SET - 1],
-  ...GALLERY,
-  GALLERY[0],
-  GALLERY[1],
-];
-
-/** Map any strip position back to the real 0..3 index. */
-const realIndex = (pos) => ((pos - LEAD) % SET + SET) % SET;
+/* Everything about the loop is derived from GALLERY.length in data/gallery.js. */
+const SET = GALLERY.length;
+const LEAD = CLONE_LEAD;
 
 export default function Gallery() {
   const [openAt, setOpenAt] = useState(null);
@@ -148,7 +145,7 @@ export default function Gallery() {
           style={{ WebkitOverflowScrolling: 'touch', gap: '1rem' }}
         >
           {LOOP.map((src, pos) => {
-            const size = IMAGE_SIZES[src];
+            const size = GALLERY_SIZES[src];
             const real = realIndex(pos);
             const isClone = pos < LEAD || pos >= LEAD + SET;
             return (
@@ -283,7 +280,7 @@ function Lightbox({ startIndex, onClose }) {
     }
   };
 
-  const size = IMAGE_SIZES[GALLERY[i]];
+  const size = GALLERY_SIZES[GALLERY[i]];
 
   return createPortal(
     <div

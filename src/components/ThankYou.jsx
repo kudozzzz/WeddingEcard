@@ -34,7 +34,7 @@ export default function ThankYou() {
       >
         <p>There are days a family waits for, and this is ours.</p>
         <p className="mt-4">
-          As Ankit and Srishti begin their journey together, we would be honoured to
+          As Srishti and Ankit begin their journey together, we would be honoured to
           have you beside us — for the music, the colours, the laughter, and every
           small moment in between.
         </p>
@@ -51,6 +51,55 @@ export default function ThankYou() {
           This is the last thing on the page; nothing follows it. */}
       <Reveal as="p" index={4} className="font-signoff" style={{ color: 'var(--gold-text)', fontSize: '2.3rem' }}>
         Anjali &amp; Manish
+      </Reveal>
+
+      {/* ---- invitation from ---- */}
+
+      {/* Same separator as the one above "With Love & Gratitude". */}
+      <Reveal index={5} className="mt-14">
+        <Flourish width={120} />
+      </Reveal>
+
+      {/*
+        Same treatment as the "With Love & Gratitude" heading (Great Vibes,
+        --maroon) but smaller: this string is roughly three times the length and
+        would wrap badly at the section-heading size. Sized to sit on two lines
+        at 360px.
+      */}
+      <Reveal
+        as="h2"
+        index={6}
+        className="font-script mt-5"
+        style={{
+          color: 'var(--maroon)',
+          // Measured, not guessed: below 30px this string fits on ONE line at
+          // 360px; the section heading is 36px there. 8.9vw lands at ~32px —
+          // two balanced lines using the full column, clearly smaller than the
+          // "With Love & Gratitude" heading above it.
+          fontSize: 'clamp(2rem, 8.9vw, 2.5rem)',
+          lineHeight: 1.45,
+          textAlign: 'center',
+        }}
+      >
+        Awaiting the pleasure of your presence
+      </Reveal>
+
+      {/* Flowing prose, not a list. Order exactly as given — not alphabetised,
+          no titles, no "and" before the last name. */}
+      <Reveal
+        as="p"
+        index={7}
+        className="mt-5"
+        style={{
+          fontWeight: 300,
+          color: 'var(--ink)',
+          maxWidth: '34ch',
+          lineHeight: 1.75,
+          fontSize: '1.08rem',
+        }}
+      >
+        Gautam Kumar, Kunal Rishi, Raj Kishore Sinha, Anant Sinha, Praveen Sinha,
+        Kshitij, Aryan, Shubham, Satyam, Aditya, Rishav, Arnav, Naman &amp; the whole family.
       </Reveal>
     </section>
   );

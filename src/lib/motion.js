@@ -38,3 +38,27 @@ export const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
   typeof window.matchMedia === 'function' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * S2 gold dust (§S2).
+ *
+ * Visible and quick, not a lingering haze: scalar 0.85 makes the particles
+ * large enough to read at all, gravity 0.6 makes them fall and clear rather
+ * than hang, and ticks 140 caps the lifetime. Roughly 1.4s on screen, mostly
+ * gone by the time the unroll starts.
+ */
+const DUST_BASE = {
+  spread: 110,
+  startVelocity: 32,
+  gravity: 0.6,
+  ticks: 140,
+  shapes: ['circle'],
+  origin: { y: 0.55 },
+  colors: ['#C8891A', '#E8B45C', '#F6DFA8', '#AF8C3D', '#F0E8D6'],
+};
+
+export const DUST_BURSTS = [
+  { ...DUST_BASE, particleCount: 220, scalar: 0.85 },
+  { ...DUST_BASE, particleCount: 120, scalar: 0.65 },
+];
+export const DUST_SECOND_BURST_DELAY_MS = 200;

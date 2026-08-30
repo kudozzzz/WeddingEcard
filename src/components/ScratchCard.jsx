@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { GoldRule, CornerOrnaments } from './Ornaments.jsx';
-import { prefersReducedMotion } from '../lib/motion.js';
+import {
+  prefersReducedMotion,
+  DUST_BURSTS,
+  DUST_SECOND_BURST_DELAY_MS,
+} from '../lib/motion.js';
 
 /**
  * S2 — Scratch card.
@@ -27,8 +31,6 @@ const MIN_MOVES = 3;
 const MIN_CLEARED = 0.08;
 const FALLBACK_AFTER_MS = 10000;
 
-const CONFETTI_COLOURS = ['#AF8C3D', '#C9A961', '#791D2A', '#F0E8D6', '#1D234F'];
-
 const reduced = prefersReducedMotion;
 
 const alreadyRevealed = () => {
@@ -39,9 +41,16 @@ const alreadyRevealed = () => {
   }
 };
 
-export default function ScratchCard() {
+export default function ScratchCard({ onReveal }) {
   const [revealed, setRevealed] = useState(alreadyRevealed);
   const [showFallback, setShowFallback] = useState(false);
+
+  // A guest returning to a card that is already revealed still needs the
+  // invitation button; the auto-expand itself is separately guarded so it
+  // cannot fire twice.
+  useEffect(() => {
+    if (alreadyRevealed()) onReveal?.();
+  }, [onReveal]);
 
   const wrapRef = useRef(null);
   const canvasRef = useRef(null);
@@ -54,17 +63,11 @@ export default function ScratchCard() {
 
   /* ---------------------------------------------------------------- reveal */
 
+  /** Gold dust, not confetti — see DUST_BURSTS in lib/motion.js. */
   const fireConfetti = useCallback(() => {
     if (reduced()) return;
-    const burst = () =>
-      confetti({
-        particleCount: 90,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: CONFETTI_COLOURS,
-      });
-    burst();
-    setTimeout(burst, 180);
+    confetti(DUST_BURSTS[0]);
+    setTimeout(() => confetti(DUST_BURSTS[1]), DUST_SECOND_BURST_DELAY_MS);
   }, []);
 
   const reveal = useCallback(
@@ -88,8 +91,10 @@ export default function ScratchCard() {
       }
 
       if (withConfetti) fireConfetti();
+      // Tell S2 the date is out, so it can start the invitation-card sequence.
+      onReveal?.();
     },
-    [fireConfetti],
+    [fireConfetti, onReveal],
   );
 
   /* ------------------------------------------------------------ paint once */

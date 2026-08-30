@@ -608,18 +608,71 @@ The track loops with an audible seam at 2:42. **That is decided — leave it.**
 
 ## 7. Performance budget
 
-Total page weight **under 1.2MB** excluding audio. Current assets are 616KB, so the budget is
-mostly about not adding to them.
+**The 1200 KB budget applies to INITIAL PAGE LOAD, not to the size of `public/`.**
+Measuring the whole folder is meaningless — the audio alone is 1.27 MB and is never
+fetched until the envelope is tapped. Report three figures, always measured, never
+estimated:
+
+```js
+// On a fresh session, idle at the top with the gate up, no scrolling:
+performance.getEntriesByType('resource')
+```
+
+### 1. Initial load — what the browser fetches before any interaction
+
+| | |
+|---|---|
+| HTML | 2.5 KB |
+| CSS + JS | ~71.5 KB gzipped (217 KB uncompressed) |
+| **Fonts** | **168.2 KB** — `css2` 15.2 + four woff2 |
+| jaal SVGs (both) | 126.5 KB |
+| Event art ×3 | 264.7 KB |
+| Venue photos ×3 | 217.3 KB |
+| Gallery ×8 | 496.3 KB |
+| **Total** | **~1347 KB — OVER the 1200 KB budget** |
+
+### 2. Deferred — verified not requested on first load
+
+| | |
+|---|---|
+| `theme.mp3` | 1273.1 KB — `preload="none"`, fetched on the envelope tap |
+| `invitation-card.webp` | 303.4 KB — fetched only when the date is revealed |
+
+### 3. Total shipped
+
+**~3012 KB**, including `og-image.jpg` (110.9 KB), which only the link-preview crawler
+fetches.
+
+### `loading="lazy"` is NOT deferring the below-fold images
+
+Measured on a fresh session with the gate up and **no scrolling**: all 8 gallery photos,
+all 3 venue photos and all 3 event artworks are requested anyway — 978 KB of the 1347 KB.
+
+The cause is structural. S1 is a fixed overlay (§S1), so S2–S8 are fully laid out beneath
+it from first paint, and Chrome's lazy-loading distance threshold is generous on a fast
+connection — nearly everything falls inside it. `loading="lazy"` alone therefore buys
+almost nothing here.
+
+Cutting initial load means deferring for real, not relying on the attribute:
+
+- hold the `src` back behind an IntersectionObserver and assign it on approach, or
+- do not render S3–S8 image elements at all until the gate has opened.
+
+Either brings initial load to roughly **370 KB**. Do not "fix" this by re-encoding the
+photographs — they are already optimised WebP.
 
 - All photographs are already optimised WebP. Do not re-encode, do not add new raster images.
 - Ornament is **vector only** — inline SVG, CSS, or a static `.svg` in `public/` (see §3).
   The jaal patterns and the monogram ship as `.svg` / path data; the event motifs, corner
   ornaments, and palette dots stay inline SVG and CSS. No raster ornament, ever.
-- Fonts: `display=swap`, preconnect to `fonts.gstatic.com`.
-- `canvas-confetti` is ~7KB; `framer-motion` is the heaviest dependency. Import named components
-  (`import { motion } from 'framer-motion'`), never the whole namespace.
-- Lazy-load every image below the fold. Set explicit `width`/`height` everywhere to kill CLS.
-- Target: Lighthouse mobile Performance ≥ 90, first contentful paint under 2s on simulated 4G.
+- Fonts: `display=swap`, preconnect to `fonts.gstatic.com`. At 168 KB they are the single
+  largest non-image item on first load — adding a fourth family is not free.
+- `canvas-confetti` is ~7KB; `framer-motion` was measured at **+109 KB** and is deliberately
+  not used — the §3 scroll animation is IntersectionObserver + CSS transitions instead.
+- Set explicit `width`/`height` everywhere to kill CLS.
+- Target: Lighthouse mobile Performance >= 90, first contentful paint under 2s on simulated 4G.
+
+---
 
 ## 8. Testing checklist
 
@@ -727,5 +780,15 @@ ornaments.
 - Do not reorder the gallery photos or the events.
 - Do not add localStorage — `sessionStorage` only, so a returning guest months later gets the full
   experience again.
+- **Never write to, overwrite, or delete anything under `public/img/` or `public/audio/`.**
+  Those files are the owner's, they are not in git, and a lost one cannot be recovered. This
+  has already destroyed a supplied asset once: a test fixture was written over
+  `public/img/invitation/invitation-card.webp` with `ffmpeg -y` and then removed, and the
+  deploy shipped with no invitation card.
+  - Never create a fixture at a real asset path, even if the path looks empty — check first,
+    and assume a missing file means "not supplied yet", never "free to use".
+  - Never test a missing-file path by deleting a real file.
+  - If a fixture is needed, write it OUTSIDE `public/` (a temp directory), point at it with a
+    local override, and remove the override afterwards.
 - Do not add analytics, cookie banners, or any third-party script.
 - Do not swap the stack to Next.js.
