@@ -1,5 +1,5 @@
-import { EVENTS } from '../data/events.js';
 import Reveal from './Reveal.jsx';
+import { useVersion } from '../lib/version.jsx';
 import { GoldDiamondRule, EventMotif } from './Ornaments.jsx';
 
 /**
@@ -10,8 +10,13 @@ import { GoldDiamondRule, EventMotif } from './Ornaments.jsx';
  * never rendered (§S6).
  *
  * Layout target: reference/inspiration/06-wardrobe-LAYOUT-TARGET.jpeg
+ *
+ * One tile per VISIBLE event (data/versions.js) — same resolved list as S4
+ * and S5, so a tier can never show a palette for an event it does not list.
  */
 export default function Wardrobe() {
+  const { visibleEvents } = useVersion();
+
   return (
     <section id="wardrobe" className="section-y relative z-10 px-6">
       <Reveal as="h2" className="section-heading">
@@ -26,8 +31,8 @@ export default function Wardrobe() {
         A little something to inspire your look for each celebration
       </Reveal>
 
-      <div className="mx-auto mt-10 grid max-w-4xl gap-6 md:grid-cols-2">
-        {EVENTS.map((event, i) => (
+      <div className={`mx-auto mt-10 grid gap-6 ${TILE_GRID[visibleEvents.length] ?? TILE_GRID[3]}`}>
+        {visibleEvents.map((event, i) => (
           <Reveal key={event.id} index={i}>
             <WardrobeTile event={event} />
           </Reveal>
@@ -36,6 +41,17 @@ export default function Wardrobe() {
     </section>
   );
 }
+
+/**
+ * Whole literal class strings, keyed by visible tile count — a lone tile in a
+ * two-column grid would sit in the left half of the page. Tailwind scans source
+ * text, so these must never be assembled from fragments.
+ */
+const TILE_GRID = {
+  1: 'max-w-md',
+  2: 'max-w-4xl md:grid-cols-2',
+  3: 'max-w-4xl md:grid-cols-2',
+};
 
 /** '24th' + 'November 2026' -> '24 NOV' for the corner chip. */
 function dateChip(event) {

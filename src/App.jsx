@@ -9,11 +9,16 @@ import Wardrobe from './components/Wardrobe.jsx';
 import Gallery from './components/Gallery.jsx';
 import ThankYou from './components/ThankYou.jsx';
 import MusicToggle from './components/MusicToggle.jsx';
+import { useResolvedVersion, VersionProvider } from './lib/version.jsx';
 
 const TARGET_VOLUME = 0.35; // §6 — not 1.0
 const FADE_MS = 1500;
 
-/** sessionStorage can throw in private modes — never let that break the gate. */
+/**
+ * sessionStorage can throw in private modes — never let that break the gate.
+ * Keys arriving here are already namespaced by version (see lib/version.jsx),
+ * so no tier can read another tier's progress.
+ */
 const read = (key) => {
   try {
     return sessionStorage.getItem(key);
@@ -47,13 +52,18 @@ const write = (key, value) => {
  * processing here.
  */
 export default function App() {
-  const [gateOpen, setGateOpen] = useState(() => read('envelopeOpened') === '1');
-  const [scrollLocked, setScrollLocked] = useState(() => read('envelopeOpened') !== '1');
+  // Resolved once, from window.location.pathname, before any storage read —
+  // every sessionStorage key below is namespaced by it.
+  const version = useResolvedVersion();
+  const sk = version.storageKey;
+
+  const [gateOpen, setGateOpen] = useState(() => read(sk('envelopeOpened')) === '1');
+  const [scrollLocked, setScrollLocked] = useState(() => read(sk('envelopeOpened')) !== '1');
   // `muted` is the guest's stored INTENT. `playing` is what the element is
   // actually doing. They are not the same thing: after a reload there is no
   // user gesture, so playback is refused and intent alone would make the
   // toggle claim to be playing while the page is silent.
-  const [muted, setMuted] = useState(() => read('muted') === '1');
+  const [muted, setMuted] = useState(() => read(sk('muted')) === '1');
   const [playing, setPlaying] = useState(false);
 
   const audioRef = useRef(null);
@@ -123,10 +133,10 @@ export default function App() {
     if (p && typeof p.catch === 'function') {
       p.catch(() => {
         setMuted(true);
-        write('muted', '1');
+        write(sk('muted'), '1');
       });
     }
-  }, []);
+  }, [sk]);
 
   /**
    * Called synchronously from the envelope tap handler (§6). That tap is the
@@ -162,7 +172,7 @@ export default function App() {
     // what its icon promises.
     const next = !el.paused;   // currently audible -> next state is muted
     setMuted(next);
-    write('muted', next ? '1' : '0');
+    write(sk('muted'), next ? '1' : '0');
     // A manual mute cancels any armed first-tap resume.
     detachResume();
 
@@ -177,7 +187,7 @@ export default function App() {
       safePlay(el);
       rampVolume(TARGET_VOLUME, FADE_MS);
     }
-  }, [rampVolume, safePlay, detachResume]);
+  }, [rampVolume, safePlay, detachResume, sk]);
 
   /* The button reflects reality, not intent: these events are the only thing
      that sets `playing`. */
@@ -208,7 +218,7 @@ export default function App() {
    */
   useEffect(() => {
     if (!gateOpen) return;          // the envelope tap handles the first visit
-    if (read('muted') === '1') return;
+    if (read(sk('muted')) === '1') return;
     const el = audioRef.current;
     if (!el || !el.paused) return;
 
@@ -237,7 +247,7 @@ export default function App() {
       cancelled = true;
       detachResume();
     };
-  }, [gateOpen, rampVolume, detachResume]);
+  }, [gateOpen, rampVolume, detachResume, sk]);
 
   useEffect(() => cancelRamp, []);
 
@@ -260,7 +270,7 @@ export default function App() {
   }, []);
 
   return (
-    <>
+    <VersionProvider version={version}>
       <PaperTexture />
 
       {/* Mounted ONCE, here, at a fixed position among its siblings so React
@@ -275,7 +285,9 @@ export default function App() {
         <Events />
         <Venues />
         <Wardrobe />
-        <Gallery />
+        {/* Absent entirely on the restricted tier — not hidden. An unmounted
+            section renders no <img>, so none of its photographs are fetched. */}
+        {version.gallery && <Gallery />}
         <ThankYou />
       </main>
 
@@ -283,6 +295,6 @@ export default function App() {
 
       {/* Appears only after the envelope opens (§6). */}
       {gateOpen && <MusicToggle playing={playing} onToggle={toggleMute} />}
-    </>
+    </VersionProvider>
   );
 }

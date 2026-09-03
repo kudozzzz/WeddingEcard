@@ -11,6 +11,7 @@ import {
   DUST_BURSTS,
   DUST_SECOND_BURST_DELAY_MS,
 } from '../lib/motion.js';
+import { useSessionStore } from '../lib/version.jsx';
 
 /**
  * S2 — Scratch card.
@@ -38,24 +39,18 @@ const FALLBACK_AFTER_MS = 10000;
 
 const reduced = prefersReducedMotion;
 
-const alreadyRevealed = () => {
-  try {
-    return sessionStorage.getItem('dateRevealed') === '1';
-  } catch {
-    return false;
-  }
-};
-
 export default function ScratchCard({ onReveal }) {
-  const [revealed, setRevealed] = useState(alreadyRevealed);
+  // Namespaced per guest tier — a reveal on one link must not pre-reveal another.
+  const store = useSessionStore();
+  const [revealed, setRevealed] = useState(() => store.read('dateRevealed') === '1');
   const [showFallback, setShowFallback] = useState(false);
 
   // A guest returning to a card that is already revealed still needs the
   // invitation button; the auto-expand itself is separately guarded so it
   // cannot fire twice.
   useEffect(() => {
-    if (alreadyRevealed()) onReveal?.();
-  }, [onReveal]);
+    if (store.read('dateRevealed') === '1') onReveal?.();
+  }, [onReveal, store]);
 
   const wrapRef = useRef(null);
   const canvasRef = useRef(null);
@@ -80,11 +75,7 @@ export default function ScratchCard({ onReveal }) {
       if (doneRef.current) return;
       doneRef.current = true;
 
-      try {
-        sessionStorage.setItem('dateRevealed', '1');
-      } catch {
-        /* private mode — it simply re-scratches next visit */
-      }
+      store.write('dateRevealed', '1');
 
       const canvas = canvasRef.current;
       if (canvas && !reduced()) {

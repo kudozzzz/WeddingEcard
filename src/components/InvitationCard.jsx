@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { prefersReducedMotion } from '../lib/motion.js';
+import { useSessionStore } from '../lib/version.jsx';
 
 /**
  * The traditional invitation card in S2.
@@ -61,21 +62,6 @@ function useMountMetrics() {
   return { small, rodH, finialSpan, sideReach };
 }
 
-const read = (k) => {
-  try {
-    return sessionStorage.getItem(k);
-  } catch {
-    return null;
-  }
-};
-const write = (k, v) => {
-  try {
-    sessionStorage.setItem(k, v);
-  } catch {
-    /* ignore */
-  }
-};
-
 /**
  * Load the image only once `active` is true (the date has been revealed).
  * status: 'idle' | 'loading' | 'ready' | 'failed'
@@ -128,7 +114,9 @@ export function InvitationScroll({ active, onOpenViewer }) {
    * phase the element renders open first and then animates *closed* over 2.6s
    * before opening — the card visibly rolls up, then unrolls.
    */
-  const [phase, setPhase] = useState(() => (read(UNROLLED_KEY) === '1' ? 'done' : 'armed'));
+  // Namespaced per guest tier (see lib/version.jsx).
+  const store = useSessionStore();
+  const [phase, setPhase] = useState(() => (store.read(UNROLLED_KEY) === '1' ? 'done' : 'armed'));
   // Measured ONCE, when the image is ready — the roller needs a pixel distance
   // to travel and container-query units are not dependable on older Android.
   const [cardH, setCardH] = useState(0);
@@ -165,17 +153,17 @@ export function InvitationScroll({ active, onOpenViewer }) {
     startedRef.current = true;
 
     if (reduced) {
-      write(UNROLLED_KEY, '1');
+      store.write(UNROLLED_KEY, '1');
       setPhase('done');
       return;
     }
 
     const t = setTimeout(() => {
-      write(UNROLLED_KEY, '1');
+      store.write(UNROLLED_KEY, '1');
       setPhase('opening'); // flips the clip; the compositor animates it
     }, HOLD_BEFORE_UNROLL_MS);
     return () => clearTimeout(t);
-  }, [status, phase, reduced]);
+  }, [status, phase, reduced, store]);
 
   const onTransitionEnd = (e) => {
     if (e.propertyName === 'clip-path' || e.propertyName === '-webkit-clip-path') {

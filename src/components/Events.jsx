@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { EVENTS } from '../data/events.js';
 import Reveal from './Reveal.jsx';
+import { useVersion } from '../lib/version.jsx';
 import { prefersReducedMotion } from '../lib/motion.js';
 import {
   CornerOrnaments,
@@ -23,16 +23,22 @@ import {
  * than showing a broken image — see ArtPanel.
  *
  * The venue photographs belong to S5 and must not appear here as well.
+ *
+ * Which events appear is the guest tier's (data/versions.js) — this section,
+ * S5 and S6 all render from the same resolved list, so adding or removing an
+ * event is a one-line change there and nothing here.
  */
 export default function Events() {
+  const { visibleEvents } = useVersion();
+
   return (
     <section id="events" className="section-y relative z-10 px-6">
       <Reveal as="h2" className="section-heading mb-10">
         Wedding Events
       </Reveal>
 
-      <div className="mx-auto grid max-w-6xl gap-6 min-[900px]:grid-cols-3">
-        {EVENTS.map((event, i) => (
+      <div className={`mx-auto grid gap-6 ${CARD_GRID[visibleEvents.length] ?? CARD_GRID[3]}`}>
+        {visibleEvents.map((event, i) => (
           <Reveal key={event.id} index={i}>
             <EventCard event={event} index={i} />
           </Reveal>
@@ -41,6 +47,19 @@ export default function Events() {
     </section>
   );
 }
+
+/**
+ * Column count and container width follow the number of visible cards, so a
+ * one- or two-event tier does not leave a card stranded in the left third of a
+ * three-column grid. Each value is a whole literal class string — Tailwind
+ * scans source text, so these must never be assembled from fragments.
+ * Every width keeps the card at roughly the 368px it has in the 3-up layout.
+ */
+const CARD_GRID = {
+  1: 'max-w-sm',
+  2: 'max-w-3xl min-[900px]:grid-cols-2',
+  3: 'max-w-6xl min-[900px]:grid-cols-3',
+};
 
 function EventCard({ event, index }) {
   return (

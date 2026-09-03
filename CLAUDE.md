@@ -271,6 +271,8 @@ no state library, no UI kit. One scrolling page.
 src/
   App.jsx
   data/events.js          // §2 verbatim
+  data/versions.js        // §13 guest tiers — the ONLY place tokens live
+  lib/version.jsx         // resolves the tier once, provides it via context
   components/
     Envelope.jsx          // S1
     SaveTheDate.jsx       // S2  (contains ScratchCard)
@@ -727,6 +729,17 @@ from day one** — this design lives or dies on a 390px screen, and the desktop 
 Then: push to GitHub → import into Vercel → framework preset **Vite**, build `npm run build`,
 output `dist`. Free tier is comfortably sufficient at this guest count.
 
+`vercel.json` carries a catch-all rewrite so every path serves `index.html`:
+
+```json
+"rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+```
+
+Without it the guest-tier URLs (§13) 404 on a hard refresh or when opened fresh
+from WhatsApp — they are not files on disk. Vercel checks the filesystem
+**before** applying rewrites, so everything under `/img`, `/audio` and
+`/assets` still serves itself.
+
 In `index.html`:
 
 ```html
@@ -812,4 +825,62 @@ ornaments.
   - If a fixture is needed, write it OUTSIDE `public/` (a temp directory), point at it with a
     local override, and remove the override afterwards.
 - Do not add analytics, cookie banners, or any third-party script.
+- Do not un-filter S4/S5/S6, or mount S7 unconditionally — see §13. Those
+  sections deliberately render from the resolved tier, not from `EVENTS`.
+- Do not give the tiers different `<title>` or OG tags, and do not add a router.
 - Do not swap the stack to Next.js.
+
+---
+
+## 13. Guest-tier versions
+
+Three audiences, **one codebase, one deploy, three URLs**. Not three projects,
+not three branches, not three folders.
+
+`src/data/versions.js` is the whole configuration and the only place the tokens
+appear:
+
+| Path | Events | Gallery |
+|---|---|---|
+| `/` | Wedding | no |
+| `/TOKEN_A` | Sangeet, Wedding | yes |
+| `/TOKEN_B` | Sangeet, Haldi, Wedding | yes |
+
+`TOKEN_A` / `TOKEN_B` are literal placeholders. Substitute the real values in
+that file and nowhere else.
+
+**Resolution.** `window.location.pathname` is read **once**, at mount, through
+`useResolvedVersion()` (a `useState` lazy initialiser, so no re-render can
+re-read it). There is no router. The resolved object goes down the tree via
+context; components read it with `useVersion()`. A trailing slash is tolerated;
+**anything else unrecognised falls back to `/`, the most restricted version** —
+including a near-miss on case. The context default is also `/`, so a component
+rendered outside the provider shows less, never more.
+
+**What the config drives.** S4, S5 and S6 all map over the *same*
+`visibleEvents` list — none of them holds its own copy, so a venue can never
+outlive its event and the Haldi palette cannot appear without Haldi. The list is
+rebuilt by filtering `EVENTS`, so it keeps the canonical Sangeet → Haldi →
+Wedding order however `events:` is written. S7 is gated at the `App` level with
+`{version.gallery && <Gallery />}` — **unmounted, not hidden**, so a tier
+without the gallery fetches none of its photographs.
+
+`CARD_GRID` / `VENUE_GRID` / `TILE_GRID` pick the column count and container
+width from the number of visible cards, so a one-event tier does not leave a
+card stranded in the left third of a three-column grid. Each entry is a whole
+literal class string — Tailwind scans source text, so they must never be
+assembled from fragments.
+
+**Unchanged in every version:** the envelope, the scratch card and date reveal,
+the farmaan and invitation card, the countdown, the thank-you note, the
+invitation-from names, the music, all ornament and all spacing.
+
+**Meta is identical across all three** (§9). The preview card must look the same
+whichever link a guest receives — a differentiated OG title would tell a guest
+which tier they were given.
+
+**sessionStorage is namespaced per tier**: every key is written as
+`<path>|<name>` (`/|envelopeOpened`, `/TOKEN_B|dateRevealed`, …) through
+`useSessionStore()`. No component calls `sessionStorage` directly any more.
+The tier itself is **never stored** — it is resolved from the URL on every load,
+so no cached value can ever serve one guest another tier's content.

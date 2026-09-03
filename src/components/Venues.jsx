@@ -1,5 +1,6 @@
-import { EVENTS, IMAGE_SIZES } from '../data/events.js';
+import { IMAGE_SIZES } from '../data/events.js';
 import Reveal from './Reveal.jsx';
+import { useVersion } from '../lib/version.jsx';
 import { CornerOrnaments, PinIcon } from './Ornaments.jsx';
 
 /**
@@ -7,16 +8,22 @@ import { CornerOrnaments, PinIcon } from './Ornaments.jsx';
  *
  * Same card shell as S4. Photos carry explicit width/height so the box is
  * reserved before decode, and everything below the fold is lazy (§7).
+ *
+ * One tile per VISIBLE event (data/versions.js) — the venue list is derived
+ * from the events, never held separately, so a venue can never outlive the
+ * event that hosts it.
  */
 export default function Venues() {
+  const { visibleEvents } = useVersion();
+
   return (
     <section id="venues" className="section-y relative z-10 px-6">
       <Reveal as="h2" className="section-heading mb-10">
         The Venue
       </Reveal>
 
-      <div className="mx-auto grid max-w-6xl gap-6 min-[900px]:grid-cols-3">
-        {EVENTS.map((event, i) => (
+      <div className={`mx-auto grid gap-6 ${VENUE_GRID[visibleEvents.length] ?? VENUE_GRID[3]}`}>
+        {visibleEvents.map((event, i) => (
           <Reveal key={event.id} index={i}>
             <VenueTile event={event} />
           </Reveal>
@@ -25,6 +32,13 @@ export default function Venues() {
     </section>
   );
 }
+
+/** Same shell as S4, so the same width ladder. See CARD_GRID in Events.jsx. */
+const VENUE_GRID = {
+  1: 'max-w-sm',
+  2: 'max-w-3xl min-[900px]:grid-cols-2',
+  3: 'max-w-6xl min-[900px]:grid-cols-3',
+};
 
 function VenueTile({ event }) {
   const size = IMAGE_SIZES[event.photo];
