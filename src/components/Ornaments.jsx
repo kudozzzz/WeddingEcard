@@ -246,3 +246,133 @@ export function PinIcon({ size = 12 }) {
     </svg>
   );
 }
+
+
+/* ============================================================ shared jaal ==
+ * Ornament derived from the jaal's pointed-petal vocabulary. Defined once here
+ * and reused by S2 and S3 — no new colours, fonts or image assets.
+ * ========================================================================= */
+
+/**
+ * One pointed petal along +X: a point at the origin, swelling to `w` at the
+ * midpoint, tapering to a point at `len`. Rotated into place by the caller.
+ */
+const petalPath = (len, w) =>
+  `M0 0 Q${(len * 0.35).toFixed(2)} ${(-w / 2).toFixed(2)} ${len} 0 ` +
+  `Q${(len * 0.35).toFixed(2)} ${(w / 2).toFixed(2)} 0 0 Z`;
+
+/** Petals fanned evenly between two angles. */
+const fan = (count, fromDeg, toDeg, len, w) =>
+  Array.from({ length: count }, (_, i) => {
+    const deg = fromDeg + ((toDeg - fromDeg) * i) / (count - 1);
+    return <path key={deg} d={petalPath(len, w)} transform={`rotate(${deg})`} />;
+  });
+
+/**
+ * Corner spray — two short petals, one long, and a bud, all fanning inward
+ * from the corner. `corner` mirrors it into place.
+ */
+export function CornerSpray({ scale = 1, corner = 'tl', color = 'var(--gold)' }) {
+  const flip = {
+    tl: 'none',
+    tr: 'scaleX(-1)',
+    bl: 'scaleY(-1)',
+    br: 'scale(-1, -1)',
+  }[corner];
+  const size = 26 * scale;
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 26 26"
+      fill="none"
+      stroke={color}
+      strokeWidth="0.9"
+      strokeLinejoin="round"
+      opacity="0.72"
+      style={{ transform: flip === 'none' ? undefined : flip }}
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <g vectorEffect="non-scaling-stroke">
+        <path d={petalPath(15, 4.4)} transform="rotate(32)" vectorEffect="non-scaling-stroke" />
+        <path d={petalPath(15, 4.4)} transform="rotate(58)" vectorEffect="non-scaling-stroke" />
+        <path d={petalPath(23, 3.2)} transform="rotate(45)" vectorEffect="non-scaling-stroke" />
+        <path d={petalPath(7, 2.4)} transform="rotate(45)" vectorEffect="non-scaling-stroke" />
+      </g>
+    </svg>
+  );
+}
+
+/** Lotus crest — five fanned petals, a base circle, and a shallow arc beneath. */
+export function LotusCrest({ scale = 1, color = 'var(--gold)' }) {
+  const w = 40 * scale;
+  const h = 28 * scale;
+  return (
+    <svg
+      width={w}
+      height={h}
+      viewBox="-20 -20 40 28"
+      fill="none"
+      stroke={color}
+      strokeWidth="1"
+      strokeLinejoin="round"
+      opacity="0.8"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <g vectorEffect="non-scaling-stroke">
+        {fan(5, -170, -10, 17, 5)}
+        <circle cx="0" cy="0" r="1.7" vectorEffect="non-scaling-stroke" />
+        {/* shallow arc beneath, spanning 32 */}
+        <path d="M-16 4 Q0 8.4 16 4" vectorEffect="non-scaling-stroke" />
+      </g>
+    </svg>
+  );
+}
+
+/** Floret — the crest without the arc, for the break in the S3 tile rule. */
+export function Floret({ scale = 1, color = 'var(--gold)' }) {
+  const w = 30 * scale;
+  const h = 18 * scale;
+  return (
+    <svg
+      width={w}
+      height={h}
+      viewBox="-15 -15 30 18"
+      fill="none"
+      stroke={color}
+      strokeWidth="0.9"
+      strokeLinejoin="round"
+      opacity="0.8"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <g vectorEffect="non-scaling-stroke">
+        {fan(5, -170, -10, 13, 3.8)}
+        <circle cx="0" cy="0" r="1.3" vectorEffect="non-scaling-stroke" />
+      </g>
+    </svg>
+  );
+}
+
+/**
+ * The page jaal at 5%, clipped to the element's radius. Sits above the card
+ * background and below all content — content needs its own stacking context.
+ */
+export function JaalWatermark({ radius = 0 }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0"
+      style={{
+        backgroundImage: 'url(/img/pattern/jaal-paper.svg)',
+        backgroundRepeat: 'repeat',
+        backgroundSize: '150px 150px',
+        opacity: 0.05,
+        borderRadius: radius,
+        zIndex: 0,
+      }}
+    />
+  );
+}

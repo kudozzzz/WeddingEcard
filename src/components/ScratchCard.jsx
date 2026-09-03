@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
-import { GoldRule, CornerOrnaments } from './Ornaments.jsx';
+import {
+  GoldRule,
+  CornerOrnaments,
+  CornerSpray,
+  JaalWatermark,
+} from './Ornaments.jsx';
 import {
   prefersReducedMotion,
   DUST_BURSTS,
@@ -325,12 +330,45 @@ export default function ScratchCard({ onReveal }) {
           maxWidth: '86vw',
           borderRadius: 12,
           borderColor: 'var(--gold)',
+          boxShadow: '0 4px 5px rgba(122,74,42,0.16)',
         }}
       >
         <CornerOrnaments inset={8} size={14} />
 
         {/* ---- revealed layer: real DOM, sits underneath ---- */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
+        <JaalWatermark radius={12} />
+
+        {/* double rule */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute"
+          style={{ inset: 9, borderRadius: 9, border: '1px solid var(--gold)', opacity: 0.42 }}
+        />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute"
+          style={{ inset: 13.5, borderRadius: 6, border: '0.55px solid var(--gold)', opacity: 0.26 }}
+        />
+
+        {/* corner sprays, full scale, all four corners */}
+        <span aria-hidden="true" className="pointer-events-none absolute" style={{ top: 27, left: 27, lineHeight: 0 }}>
+          <CornerSpray corner="tl" />
+        </span>
+        <span aria-hidden="true" className="pointer-events-none absolute" style={{ top: 27, right: 27, lineHeight: 0 }}>
+          <CornerSpray corner="tr" />
+        </span>
+        <span aria-hidden="true" className="pointer-events-none absolute" style={{ bottom: 27, left: 27, lineHeight: 0 }}>
+          <CornerSpray corner="bl" />
+        </span>
+        <span aria-hidden="true" className="pointer-events-none absolute" style={{ bottom: 27, right: 27, lineHeight: 0 }}>
+          <CornerSpray corner="br" />
+        </span>
+
+
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center"
+          style={{ zIndex: 1 }}
+        >
           <span
             style={{
               fontFamily: "'Cormorant Garamond', Georgia, serif",
@@ -347,8 +385,19 @@ export default function ScratchCard({ onReveal }) {
             November 2026
           </span>
           <GoldRule className="my-2.5" width="2.25rem" />
-          <span className="small-caps" style={{ color: 'var(--gold)' }}>
-            The Aurum, Ghaziabad
+          {/* Replaces the venue line. Values as specified: 11px, 0.3em, --gold-text. */}
+          <span
+            style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontWeight: 500,
+              textTransform: 'uppercase',
+              fontSize: 11,
+              letterSpacing: '0.3em',
+              color: 'var(--gold-text)',
+              lineHeight: 1.4,
+            }}
+          >
+            Save the Date
           </span>
         </div>
 
@@ -368,6 +417,11 @@ export default function ScratchCard({ onReveal }) {
               // of scratching — the single most important line in the file.
               touchAction: 'none',
               cursor: 'grab',
+              // MUST out-rank everything in the revealed layer. The watermark is
+              // z-index 0 and the date content is z-index 1; without this the
+              // date paints straight through the gold and is readable before it
+              // has been scratched, which breaks hard rule 1.
+              zIndex: 3,
             }}
           />
         )}

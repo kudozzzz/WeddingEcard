@@ -10,7 +10,7 @@ import { CornerOrnaments, PinIcon } from './Ornaments.jsx';
  */
 export default function Venues() {
   return (
-    <section id="venues" className="relative z-10 px-6 py-20">
+    <section id="venues" className="section-y relative z-10 px-6">
       <Reveal as="h2" className="section-heading mb-10">
         The Venue
       </Reveal>

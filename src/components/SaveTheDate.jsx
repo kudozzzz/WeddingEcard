@@ -22,7 +22,7 @@ export default function SaveTheDate() {
   return (
     <section
       id="save-the-date"
-      className="relative z-10 flex flex-col items-center px-6 py-20"
+      className="section-y relative z-10 flex flex-col items-center px-6 pt-20"
     >
       <Reveal as="h2" className="section-heading mb-10">
         Save the Date

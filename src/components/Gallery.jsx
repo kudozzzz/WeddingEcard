@@ -133,7 +133,7 @@ export default function Gallery() {
   }, [normalise, nearestPos]);
 
   return (
-    <section id="gallery" className="relative z-10 py-20">
+    <section id="gallery" className="section-y relative z-10">
       <Reveal as="h2" className="section-heading mb-10 px-6">
         Our Gallery
       </Reveal>

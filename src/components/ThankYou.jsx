@@ -11,7 +11,7 @@ export default function ThankYou() {
   return (
     <section
       id="thank-you"
-      className="relative z-10 flex flex-col items-center px-6 py-24 text-center"
+      className="section-y relative z-10 flex flex-col items-center px-6 pb-24 text-center"
     >
       <Reveal>
         <Flourish width={120} />

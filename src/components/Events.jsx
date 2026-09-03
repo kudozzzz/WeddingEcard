@@ -26,7 +26,7 @@ import {
  */
 export default function Events() {
   return (
-    <section id="events" className="relative z-10 px-6 py-20">
+    <section id="events" className="section-y relative z-10 px-6">
       <Reveal as="h2" className="section-heading mb-10">
         Wedding Events
       </Reveal>

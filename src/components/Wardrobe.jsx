@@ -13,7 +13,7 @@ import { GoldDiamondRule, EventMotif } from './Ornaments.jsx';
  */
 export default function Wardrobe() {
   return (
-    <section id="wardrobe" className="relative z-10 px-6 py-20">
+    <section id="wardrobe" className="section-y relative z-10 px-6">
       <Reveal as="h2" className="section-heading">
         Wedding Wardrobe
       </Reveal>

@@ -17,6 +17,14 @@
     --ink:          #3A342A;   /* body copy */
     --olive:        #796928;   /* secondary copy, taglines */
 
+    /**
+     * Vertical breathing room between sections. Each section applies it to
+     * BOTH its top and bottom, so the gap between any two adjacent sections is
+     * twice this — 108px. One value, used everywhere, so the rhythm survives
+     * sections being reordered (§3).
+     */
+    --section-gap: 54px;
+
     /* event accents */
     --navy:         #1D234F;   /* Sangeet */
     --haldi:        #C8891A;   /* Haldi */
@@ -134,6 +142,16 @@
   .btn-directions:active {
     background-color: var(--gold);
     color: #ffffff;
+  }
+
+  /**
+   * The only thing that should set vertical section padding. Page edges are the
+   * exception: S2 keeps a larger top and S8 a larger bottom, applied as Tailwind
+   * utilities which sit in a later layer and therefore win.
+   */
+  .section-y {
+    padding-top: var(--section-gap);
+    padding-bottom: var(--section-gap);
   }
 
   .hidden-scrollbar {

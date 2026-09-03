@@ -138,8 +138,29 @@ finest", i.e. no colour restriction. Handle the null case, don't invent a palett
   --navy:         #1D234F;   /* Sangeet */
   --haldi:        #C8891A;   /* Haldi */
   --maroon:       #791D2A;   /* Wedding, envelope, seal */
+
+  /* spacing */
+  --section-gap:  54px;      /* see "Section rhythm" below */
 }
 ```
+
+### Section rhythm
+
+**`--section-gap` is the only thing that sets vertical section padding.** Every section
+carries the `.section-y` class, which applies it to both top and bottom, so the gap between
+any two adjacent sections is exactly **108px** (54 + 54). One value, applied uniformly, so
+the rhythm survives sections being reordered — never set `py-*` on a section.
+
+Two deliberate exceptions, both page edges rather than gaps between sections:
+
+| | |
+|---|---|
+| S2 top | `pt-20` (80px) — the top of the page, once the gate has gone |
+| S8 bottom | `pb-24` (96px) — the end of the page; nothing follows the sign-off |
+
+Both are Tailwind utilities, which sit in a later cascade layer than `.section-y` and
+therefore win. This does **not** govern spacing inside a card or tile, nor the gap between a
+section heading and its content — those are per-section and unrelated.
 
 ### Two golds — which one goes where
 

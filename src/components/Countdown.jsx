@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { COUNTDOWN_TARGET } from '../data/events.js';
 import Reveal from './Reveal.jsx';
+import { LotusCrest, JaalWatermark } from './Ornaments.jsx';
 import { prefersReducedMotion } from '../lib/motion.js';
 
 /**
@@ -89,11 +90,16 @@ export default function Countdown() {
     <section
       id="countdown"
       ref={sectionRef}
-      className="relative z-10 flex flex-col items-center px-6 py-20"
+      className="section-y relative z-10 flex flex-col items-center px-6"
     >
       <Keyframes />
-      <Reveal as="h2" className="section-heading mb-10">
+      <Reveal as="h2" className="section-heading">
         Counting the Moments
+      </Reveal>
+
+      {/* section-level crest, once — same geometry as the date card's */}
+      <Reveal index={1} className="mb-7 mt-3" style={{ lineHeight: 0 }}>
+        <LotusCrest />
       </Reveal>
 
       {state.reached ? (
@@ -107,34 +113,75 @@ export default function Countdown() {
           }`}
         >
           {UNITS.map((label, i) => (
-            <div
-              key={label}
-              className="paper-card relative flex flex-col items-center justify-center overflow-hidden rounded-lg px-2 py-5"
-              style={{ borderColor: 'var(--gold)' }}
-            >
-              <span
-                style={{
-                  fontFamily: "'Cormorant Garamond', Georgia, serif",
-                  fontWeight: 500,
-                  fontSize: '2.6rem',
-                  lineHeight: 1.05,
-                  color: 'var(--maroon)',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
-                {state.values[i]}
-              </span>
-              <span className="small-caps mt-1.5" style={{ color: 'var(--olive)' }}>
-                {label}
-              </span>
-
-              {/* shimmer band, swept once across the row */}
-              <span aria-hidden="true" className="cd-shimmer" />
-            </div>
+            <Tile key={label} value={state.values[i]} label={label} />
           ))}
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * One countdown tile.
+ *
+ * The rule is a single SVG path, not a CSS border, because it is BROKEN at the
+ * top centre: it starts 16px right of top-centre, runs round all four rounded
+ * corners, and stops 16px left of top-centre. The floret then sits centred on
+ * that gap, straddling the line, so the ornament reads as interrupting the
+ * border rather than floating inside it.
+ */
+/**
+ * One countdown tile.
+ *
+ * The rule is a complete, unbroken rounded rectangle. It was previously an SVG
+ * path with a 32px break at top centre to seat a floret; with the floret gone
+ * the gap has no purpose, and a closed rule needs no measurement — so the
+ * ResizeObserver and the path maths went with it.
+ */
+const RULE_INSET = 7;
+const RULE_RADIUS = 6;
+
+function Tile({ value, label }) {
+  return (
+    <div
+      className="paper-card relative flex flex-col items-center justify-center overflow-hidden rounded-lg px-2 py-5"
+      style={{ borderColor: 'var(--gold)', boxShadow: '0 4px 5px rgba(122,74,42,0.16)' }}
+    >
+      <JaalWatermark radius={8} />
+
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute"
+        style={{
+          inset: RULE_INSET,
+          borderRadius: RULE_RADIUS,
+          border: '1px solid var(--gold)',
+          opacity: 0.45,
+          zIndex: 0,
+        }}
+      />
+
+      <span
+        style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontWeight: 500,
+          fontSize: '2.6rem',
+          lineHeight: 1.05,
+          color: 'var(--maroon)',
+          fontVariantNumeric: 'tabular-nums',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        {value}
+      </span>
+      <span className="small-caps mt-1.5" style={{ color: 'var(--olive)', position: 'relative', zIndex: 1 }}>
+        {label}
+      </span>
+
+      {/* shimmer band, swept once across the row */}
+      <span aria-hidden="true" className="cd-shimmer" />
+    </div>
   );
 }
 
