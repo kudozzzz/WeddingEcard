@@ -23,7 +23,7 @@ import { selectGallery } from './gallery.js';
  * index 5 is not gallery-6. See selectGallery in data/gallery.js.
  */
 export const VERSIONS = {
-  '/':  { events: ['sangeet', 'haldi', 'wedding'], gallery: 'all' },
+  '/':  { events: ['madwa', 'sangeet', 'haldi', 'wedding'], gallery: 'all' },
   '/2': { events: ['sangeet', 'wedding'],          gallery: [3, 4, 6, 8] },
   '/1': { events: ['wedding'],                     gallery: false },
 };

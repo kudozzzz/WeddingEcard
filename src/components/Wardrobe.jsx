@@ -51,6 +51,7 @@ const TILE_GRID = {
   1: 'max-w-md',
   2: 'max-w-4xl md:grid-cols-2',
   3: 'max-w-4xl md:grid-cols-2',
+  4: 'max-w-4xl md:grid-cols-2',
 };
 
 /** '24th' + 'November 2026' -> '24 NOV' for the corner chip. */
@@ -93,10 +94,13 @@ function WardrobeTile({ event }) {
         {event.name}
       </h3>
 
-      {/* 4. tagline */}
-      <p style={{ fontStyle: 'italic', color: 'var(--olive)', fontSize: '1.02rem' }}>
-        {event.tagline}
-      </p>
+      {/* 4. tagline — omitted entirely when not yet supplied, so the tile
+          closes up rather than leaving an empty line's worth of gap. */}
+      {event.tagline ? (
+        <p style={{ fontStyle: 'italic', color: 'var(--olive)', fontSize: '1.02rem' }}>
+          {event.tagline}
+        </p>
+      ) : null}
 
       {/* 5 + 6. palette — or, when palette is null, a gold divider instead */}
       {event.palette ? (

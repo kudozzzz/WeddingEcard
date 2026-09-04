@@ -9,6 +9,7 @@ import {
   ClockIcon,
   PinIcon,
   GarmentIcon,
+  WatercolourWash,
 } from './Ornaments.jsx';
 
 /**
@@ -59,6 +60,10 @@ const CARD_GRID = {
   1: 'max-w-sm',
   2: 'max-w-3xl min-[900px]:grid-cols-2',
   3: 'max-w-6xl min-[900px]:grid-cols-3',
+  // Four goes 2x2 rather than 4-up: a fourth column inside max-w-6xl would
+  // squeeze every card to ~270px, and 3-up would strand the fourth alone on
+  // a second row. 2x2 keeps the card at the same ~372px as the other tiers.
+  4: 'max-w-3xl min-[900px]:grid-cols-2',
 };
 
 function EventCard({ event, index }) {
@@ -141,7 +146,7 @@ function ArtPanel({ event, index }) {
   return (
     <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-2xl">
       {artFailed ? (
-        <WatercolourWash id={event.id} accent={event.accent} />
+        <WatercolourWash uid={`event-${event.id}`} accent={event.accent} />
       ) : (
         <img
           src={event.art}
@@ -188,68 +193,5 @@ function FloatingMotif({ id, accent }) {
         <EventMotif id={id} color={accent} size={34} />
       </span>
     </>
-  );
-}
-
-/**
- * Fallback panel: layered radial gradients in the event accent, pushed through
- * a displacement map so the edges bleed like paint rather than ending on a
- * straight line. Used only when the art file is missing.
- */
-function WatercolourWash({ id, accent }) {
-  const gradId = `wash-${id}`;
-  const filterId = `torn-${id}`;
-
-  return (
-    <svg
-      className="h-full w-full"
-      viewBox="0 0 320 240"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <defs>
-        <radialGradient id={`${gradId}-a`} cx="30%" cy="42%" r="62%">
-          <stop offset="0%" stopColor={accent} stopOpacity="0.30" />
-          <stop offset="100%" stopColor={accent} stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id={`${gradId}-b`} cx="72%" cy="58%" r="55%">
-          <stop offset="0%" stopColor={accent} stopOpacity="0.22" />
-          <stop offset="100%" stopColor={accent} stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id={`${gradId}-c`} cx="52%" cy="26%" r="46%">
-          <stop offset="0%" stopColor={accent} stopOpacity="0.16" />
-          <stop offset="100%" stopColor={accent} stopOpacity="0" />
-        </radialGradient>
-
-        <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%">
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.012 0.03"
-            numOctaves="3"
-            seed={id.length * 7}
-            result="noise"
-          />
-          <feDisplacementMap
-            in="SourceGraphic"
-            in2="noise"
-            scale="22"
-            xChannelSelector="R"
-            yChannelSelector="G"
-          />
-        </filter>
-      </defs>
-
-      {/* Flat base tint so the placeholder fills the panel edge to edge — the
-          displaced blobs alone leave card-coloured gaps at the corners, which
-          makes the CEREMONY label look like it is floating on nothing. */}
-      <rect width="320" height="240" fill={accent} opacity="0.10" />
-
-      <g filter={`url(#${filterId})`}>
-        <ellipse cx="150" cy="120" rx="170" ry="130" fill={`url(#${gradId}-a)`} />
-        <ellipse cx="205" cy="140" rx="140" ry="110" fill={`url(#${gradId}-b)`} />
-        <ellipse cx="160" cy="76" rx="120" ry="86" fill={`url(#${gradId}-c)`} />
-      </g>
-    </svg>
   );
 }

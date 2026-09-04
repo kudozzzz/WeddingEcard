@@ -41,6 +41,23 @@ flow. Build what is specified.
 ```js
 export const EVENTS = [
   {
+    id: 'madwa',
+    name: 'Madwa & Ghridhari',
+    tagline: '',                 // owner will supply
+    dateLabel: '24th November 2026',
+    dateShort: '24th',
+    monthLabel: 'November 2026',
+    time: '12:00 PM onwards',
+    venue: 'Home',
+    address: 'Orange County, Indirapuram, Ghaziabad',
+    maps: 'https://maps.app.goo.gl/v2QjHyHojfxF81Za8',   // same complex as Haldi
+    photo: null,                 // private home — see §S5
+    art: '/img/events/event-madwa.webp',
+    accent: '#B8791C',
+    attire: 'Ethnic',
+    palette: null,
+  },
+  {
     id: 'sangeet',
     name: 'Sangeet',
     tagline: 'An Evening of Elegance',
@@ -109,8 +126,14 @@ export const EVENTS = [
 export const COUNTDOWN_TARGET = '2026-11-25T19:30:00+05:30';
 ```
 
-Order is always **Sangeet → Haldi → Wedding**. Sangeet is the evening before; Haldi is the
-morning of the wedding day. That is correct, do not "fix" it.
+Order is always **Madwa & Ghridhari → Sangeet → Haldi → Wedding**. Madwa is the
+earliest, on the 24th; Sangeet is that evening; Haldi is the morning of the wedding
+day. That is correct, do not "fix" it.
+
+**Madwa appears only in the `/` tier** (§13). Its accent `#B8791C` is deliberately
+NOT Haldi's `#C8891A` — two adjacent tiles in the same yellow read as one card
+duplicated. Keep them distinct. Its `tagline` is empty until the owner supplies one;
+S6 omits the line entirely rather than rendering an empty gap.
 
 The Wedding entry has `palette: null` on purpose — the instruction is "dress in your wedding
 finest", i.e. no colour restriction. Handle the null case, don't invent a palette.
@@ -490,6 +513,12 @@ the same page.
 - Button: outlined in `--gold`, small caps, with a small pin icon. `href={maps}`,
   `target="_blank"`, `rel="noopener noreferrer"`. Fills with `--gold` and white text on hover/press.
 - Photos: `loading="lazy"`, `decoding="async"`, explicit `width`/`height` to prevent layout shift.
+- **`photo: null` (Madwa, a private home).** There is no photograph and it must not
+  borrow another venue's. The tile renders the same `WatercolourWash` S4 falls back
+  to, in the event accent, at the identical `aspect-[4/3]` so the tile keeps its
+  shape. The wash lives in `Ornaments.jsx` because both sections use it; its `uid`
+  prop must be unique per instance (`event-<id>` / `venue-<id>`) or the two copies
+  emit duplicate SVG def ids and every `url(#…)` resolves to whichever painted first.
 
 ### S6 — Wedding Wardrobe
 
@@ -842,7 +871,7 @@ appear:
 
 | Path | Events | Gallery |
 |---|---|---|
-| `/` | Sangeet, Haldi, Wedding | `'all'` — all six |
+| `/` | Madwa & Ghridhari, Sangeet, Haldi, Wedding | `'all'` — all six |
 | `/2` | Sangeet, Wedding | `[3, 4, 6, 8]` — those four |
 | `/1` | Wedding | `false` — section not mounted |
 
@@ -883,9 +912,33 @@ four photos, 1761px at six), and real cards never hop.
 
 `CARD_GRID` / `VENUE_GRID` / `TILE_GRID` pick the column count and container
 width from the number of visible cards, so a one-event tier does not leave a
-card stranded in the left third of a three-column grid. Each entry is a whole
+card stranded in the left third of a three-column grid. **Four goes 2×2**, not
+4-up: a fourth column inside `max-w-6xl` would squeeze every card to ~270px,
+and 3-up would strand the fourth alone on a second row. Each entry is a whole
 literal class string — Tailwind scans source text, so they must never be
 assembled from fragments.
+
+**S7 lightbox / strip interlock.** Opening the lightbox sets
+`body{overflow:hidden}`, which on desktop removes the ~15px vertical scrollbar,
+widens the horizontal strip's client box and makes the browser re-clamp its
+`scrollLeft`. That fires a scroll event nobody asked for; the settle handler sees
+a clone position and hops a full set; the hop fires another scroll event; and it
+oscillates — measured at **1920px back and forth every frame, ~80 times per
+open/close**. Touch never hit it because overlay scrollbars do not change the
+client width. Three things hold it shut, and all three are needed:
+
+1. the body lock adds `padding-right` equal to the scrollbar width, so the layout
+   width never changes and nothing reflows in the first place;
+2. `suppressRef` ignores strip scroll events while the lightbox is open and for
+   150ms after it closes, and the strip's exact `scrollLeft` is captured
+   **synchronously on open** (an effect runs too late — the reflow has already
+   moved it) and restored on close with `scroll-behavior: auto`;
+3. `repositioningRef` makes the hop non-reentrant, so the scroll event the hop
+   itself queues cannot re-enter and hop back.
+
+All three are refs, never state: they are read inside scroll handlers that must
+not re-render, and a state update would arrive a render too late to suppress the
+very event that scheduled it.
 
 **Unchanged in every version:** the envelope, the scratch card and date reveal,
 the farmaan and invitation card, the countdown, the thank-you note, the

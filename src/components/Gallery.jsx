@@ -34,6 +34,29 @@ export default function Gallery() {
   const stripRef = useRef(null);
   const settleTimer = useRef(null);
 
+  /**
+   * Lightbox / strip interlock. All refs, never state: these are read inside
+   * scroll handlers that must not re-render, and a state update would arrive a
+   * render too late to suppress the very event that scheduled it.
+   *
+   * The bug being prevented (desktop only): the lightbox sets
+   * body{overflow:hidden}, which removes the 15px vertical scrollbar, which
+   * widens this strip's client box and makes the browser re-clamp its
+   * scrollLeft. That fires a scroll event nobody asked for; the settle handler
+   * sees a clone position and hops one full set; the hop fires another scroll
+   * event; and it oscillates. Measured before the fix: 1920px back and forth,
+   * every frame, ~80 times per open/close. Touch never hits it because overlay
+   * scrollbars do not change the client width, so nothing reflows.
+   */
+  const suppressRef = useRef(false);       // lightbox open, or settling after close
+  const repositioningRef = useRef(false);  // normalise() is mid-hop — ignore its own event
+  const savedScrollRef = useRef(0);        // strip position captured at open
+  const wasOpenRef = useRef(false);
+  const unsuppressTimer = useRef(null);
+
+  /** How long after close to keep ignoring scroll events. */
+  const SETTLE_AFTER_CLOSE_MS = 150;
+
   /** Centre offset that puts a given figure in the middle of the viewport. */
   const centreOf = (fig, strip) =>
     fig.offsetLeft + fig.offsetWidth / 2 - strip.clientWidth / 2;
@@ -64,8 +87,12 @@ export default function Gallery() {
     if (figs.length <= lead) return;
     const prevBehavior = strip.style.scrollBehavior;
     strip.style.scrollBehavior = 'auto';
+    repositioningRef.current = true;
     strip.scrollLeft = centreOf(figs[lead], strip);
     strip.style.scrollBehavior = prevBehavior;
+    requestAnimationFrame(() => {
+      repositioningRef.current = false;
+    });
     setActive(0);
   }, [lead]);
 
@@ -76,6 +103,9 @@ export default function Gallery() {
    * animates and becomes visible.
    */
   const normalise = useCallback(() => {
+    // Reentrancy guard. Without it the hop below fires a scroll event that
+    // re-enters this function and hops back, forever.
+    if (suppressRef.current || repositioningRef.current) return;
     const strip = stripRef.current;
     if (!strip) return;
     const figs = [...strip.querySelectorAll('figure')];
@@ -97,12 +127,15 @@ export default function Gallery() {
     const prevBehavior = strip.style.scrollBehavior;
     strip.style.scrollSnapType = 'none';
     strip.style.scrollBehavior = 'auto';
+    repositioningRef.current = true;
     strip.scrollLeft += delta * setWidth;
     // Restore on the next frame; doing it synchronously can let the browser
-    // re-snap against the old position and produce a visible twitch.
+    // re-snap against the old position and produce a visible twitch. The flag
+    // clears here too, so the scroll event this hop just queued is ignored.
     requestAnimationFrame(() => {
       strip.style.scrollSnapType = prevSnap;
       strip.style.scrollBehavior = prevBehavior;
+      repositioningRef.current = false;
     });
   }, [nearestPos, lead, set, loop.length, realIndex]);
 
@@ -116,6 +149,9 @@ export default function Gallery() {
     const hasScrollEnd = 'onscrollend' in window;
 
     const onScroll = () => {
+      // Covers the wheel and the touch paths alike: neither has a handler of
+      // its own, both arrive here as a plain scroll event on the strip.
+      if (suppressRef.current || repositioningRef.current) return;
       setActive(realIndex(nearestPos())); // keep dots live while dragging
       if (hasScrollEnd) return;
       clearTimeout(settleTimer.current);
@@ -130,6 +166,57 @@ export default function Gallery() {
       clearTimeout(settleTimer.current);
     };
   }, [normalise, nearestPos, realIndex]);
+
+  /**
+   * Opening. Capture the strip position SYNCHRONOUSLY, before React commits and
+   * the lightbox locks the body — by the time an effect could run, the reflow
+   * has already moved scrollLeft and the captured value would be the wrong one.
+   */
+  const openLightbox = useCallback((real) => {
+    const strip = stripRef.current;
+    if (strip) savedScrollRef.current = strip.scrollLeft;
+    suppressRef.current = true;
+    wasOpenRef.current = true;
+    clearTimeout(unsuppressTimer.current);
+    clearTimeout(settleTimer.current);
+    setOpenAt(real);
+  }, []);
+
+  /**
+   * Closing. This effect runs after the lightbox's own cleanup has put the body
+   * styles back, so the scrollbar is present again and the strip has its final
+   * width — only then is restoring scrollLeft meaningful.
+   */
+  useEffect(() => {
+    if (openAt !== null) return;
+    if (!wasOpenRef.current) return;   // first mount; there is nothing to restore
+    wasOpenRef.current = false;
+
+    const strip = stripRef.current;
+    if (strip) {
+      // Force the pending reflow to happen now, so scrollLeft is assigned
+      // against the final layout rather than the scrollbar-less one.
+      void strip.offsetWidth;
+      const prevSnap = strip.style.scrollSnapType;
+      const prevBehavior = strip.style.scrollBehavior;
+      strip.style.scrollSnapType = 'none';
+      strip.style.scrollBehavior = 'auto';   // never animate the restore
+      strip.scrollLeft = savedScrollRef.current;
+      requestAnimationFrame(() => {
+        strip.style.scrollSnapType = prevSnap;
+        strip.style.scrollBehavior = prevBehavior;
+      });
+    }
+
+    // Keep ignoring scroll events a little longer: the body restore and the
+    // window.scrollTo inside the lightbox cleanup both land after this frame.
+    clearTimeout(unsuppressTimer.current);
+    unsuppressTimer.current = setTimeout(() => {
+      suppressRef.current = false;
+    }, SETTLE_AFTER_CLOSE_MS);
+  }, [openAt]);
+
+  useEffect(() => () => clearTimeout(unsuppressTimer.current), []);
 
   return (
     <section id="gallery" className="section-y relative z-10">
@@ -156,11 +243,11 @@ export default function Gallery() {
                 tabIndex={isClone ? -1 : 0}
                 aria-hidden={isClone || undefined}
                 aria-label={`Open photograph ${real + 1} full screen`}
-                onClick={() => setOpenAt(real)}
+                onClick={() => openLightbox(real)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    setOpenAt(real);
+                    openLightbox(real);
                   }
                 }}
               >
@@ -226,21 +313,31 @@ function Lightbox({ photos, startIndex, onClose }) {
   useEffect(() => {
     const y = window.scrollY;
     const body = document.body;
+    // Width of the classic (layout-affecting) vertical scrollbar, 0 where
+    // scrollbars are overlays. Hiding body overflow removes it, which would
+    // widen every descendant by that much for as long as the lightbox is up —
+    // and the horizontal strip in S7 answers a width change by re-clamping its
+    // scrollLeft, i.e. by visibly lurching. Padding the same amount back keeps
+    // the layout width identical, so nothing reflows at all.
+    const scrollbar = window.innerWidth - document.documentElement.clientWidth;
     const prev = {
       position: body.style.position,
       top: body.style.top,
       width: body.style.width,
       overflow: body.style.overflow,
+      paddingRight: body.style.paddingRight,
     };
     body.style.position = 'fixed';
     body.style.top = `-${y}px`;
     body.style.width = '100%';
     body.style.overflow = 'hidden';
+    if (scrollbar > 0) body.style.paddingRight = `${scrollbar}px`;
     return () => {
       body.style.position = prev.position;
       body.style.top = prev.top;
       body.style.width = prev.width;
       body.style.overflow = prev.overflow;
+      body.style.paddingRight = prev.paddingRight;
       // Force a synchronous reflow so the document has its full height back
       // before we scroll — while body is fixed it collapses to viewport height.
       void body.offsetHeight;

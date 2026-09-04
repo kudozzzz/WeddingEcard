@@ -4,6 +4,29 @@
 
 export const EVENTS = [
   {
+    // The earliest ceremony, so it sits FIRST in canonical order.
+    // Held at a private home: there is no venue photograph, and `photo: null`
+    // is what tells S5 to render the watercolour wash instead (see Venues).
+    id: 'madwa',
+    name: 'Madwa & Ghridhari',
+    tagline: '',                 // owner will supply
+    dateLabel: '24th November 2026',
+    dateShort: '24th',
+    monthLabel: 'November 2026',
+    time: '12:00 PM onwards',
+    venue: 'Home',
+    address: 'Orange County, Indirapuram, Ghaziabad',
+    // Same complex as the Haldi venue, so the same map link.
+    maps: 'https://maps.app.goo.gl/v2QjHyHojfxF81Za8',
+    photo: null,
+    art: '/img/events/event-madwa.webp',
+    // Deliberately NOT Haldi's #C8891A: two adjacent tiles in the same yellow
+    // read as one card duplicated. Keep them distinct.
+    accent: '#B8791C',
+    attire: 'Ethnic',
+    palette: null,
+  },
+  {
     id: 'sangeet',
     name: 'Sangeet',
     tagline: 'An Evening of Elegance',

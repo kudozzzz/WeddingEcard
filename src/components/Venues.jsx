@@ -1,7 +1,7 @@
 import { IMAGE_SIZES } from '../data/events.js';
 import Reveal from './Reveal.jsx';
 import { useVersion } from '../lib/version.jsx';
-import { CornerOrnaments, PinIcon } from './Ornaments.jsx';
+import { CornerOrnaments, PinIcon, WatercolourWash } from './Ornaments.jsx';
 
 /**
  * S5 — The Venue.
@@ -38,22 +38,32 @@ const VENUE_GRID = {
   1: 'max-w-sm',
   2: 'max-w-3xl min-[900px]:grid-cols-2',
   3: 'max-w-6xl min-[900px]:grid-cols-3',
+  4: 'max-w-3xl min-[900px]:grid-cols-2',
 };
 
 function VenueTile({ event }) {
-  const size = IMAGE_SIZES[event.photo];
+  const size = event.photo ? IMAGE_SIZES[event.photo] : null;
 
   return (
     <article className="paper-card relative overflow-hidden rounded-2xl">
-      <img
-        src={event.photo}
-        alt={event.venue}
-        width={size.w}
-        height={size.h}
-        loading="lazy"
-        decoding="async"
-        className="aspect-[4/3] w-full rounded-t-2xl object-cover"
-      />
+      {/* A private home has no photograph and must not borrow another
+          venue's. The same watercolour wash S4 uses stands in for it, in the
+          event accent, at the identical 4:3 so the tile keeps its shape. */}
+      {event.photo ? (
+        <img
+          src={event.photo}
+          alt={event.venue}
+          width={size.w}
+          height={size.h}
+          loading="lazy"
+          decoding="async"
+          className="aspect-[4/3] w-full rounded-t-2xl object-cover"
+        />
+      ) : (
+        <div className="aspect-[4/3] w-full overflow-hidden rounded-t-2xl">
+          <WatercolourWash uid={`venue-${event.id}`} accent={event.accent} />
+        </div>
+      )}
 
       <div className="relative px-6 pb-7 pt-5 text-center">
         <CornerOrnaments inset={10} size={16} />

@@ -97,6 +97,33 @@ const motifProps = (color, size) => ({
   'aria-hidden': 'true',
 });
 
+/**
+ * Madwa & Ghridhari — the mandap canopy raised before the wedding.
+ *
+ * Drawn in the same line-art idiom as the others: a draped canopy on four
+ * posts, with a small finial. Deliberately not a kalash — that is the
+ * Wedding motif and the two must not read as the same card.
+ */
+function MadwaMotif({ color, size }) {
+  return (
+    <svg {...motifProps(color, size)}>
+      {/* canopy: a swagged cloth, not a straight roof */}
+      <path d="M11 20c4.5-4 8.5-6 13-6s8.5 2 13 6" />
+      <path d="M11 20c3 2.4 5.2 3.6 6.5 3.6S20.8 22.4 24 20c3.2 2.4 5.2 3.6 6.5 3.6S34 22.4 37 20" />
+      {/* finial */}
+      <path d="M24 14v-3.5" />
+      <path d="M24 10.5c-1.4-1.1-2-2.3-1.8-3.7 1.4 0.3 2.3 1.2 2.6 2.6" />
+      <path d="M24 10.5c1.4-1.1 2-2.3 1.8-3.7-1.4 0.3-2.3 1.2-2.6 2.6" />
+      {/* four posts */}
+      <path d="M12.5 21.5V38M18.5 23.5V38M29.5 23.5V38M35.5 21.5V38" />
+      {/* ground */}
+      <path d="M9 38h30" />
+      {/* tied garland between the front posts */}
+      <path d="M18.5 27c2 2.2 3.8 3.3 5.5 3.3S26 29.2 29.5 27" opacity="0.6" />
+    </svg>
+  );
+}
+
 /** Sangeet — dholak with musical notes. */
 function DholakMotif({ color, size }) {
   return (
@@ -146,12 +173,13 @@ function KalashMotif({ color, size }) {
 }
 
 const MOTIFS = {
+  madwa: MadwaMotif,
   sangeet: DholakMotif,
   haldi: MarigoldMotif,
   wedding: KalashMotif,
 };
 
-/** Line-art motif for an event id: dholak / marigold / kalash. */
+/** Line-art motif for an event id: mandap / dholak / marigold / kalash. */
 export function EventMotif({ id, color = 'var(--gold)', size = 44 }) {
   const Motif = MOTIFS[id];
   if (!Motif) return null;
@@ -374,5 +402,74 @@ export function JaalWatermark({ radius = 0 }) {
         zIndex: 0,
       }}
     />
+  );
+}
+
+/**
+ * Watercolour wash — layered radial gradients in the event accent, pushed
+ * through a displacement map so the edges bleed like paint rather than ending
+ * on a straight line.
+ *
+ * Two callers, two jobs: S4 falls back to it when an event's art file is
+ * missing, and S5 uses it deliberately for a venue that has no photograph (a
+ * private home). `uid` must be unique per instance — the same event rendered in
+ * both sections would otherwise emit duplicate SVG def ids, and every
+ * url(#...) in the document would resolve to whichever painted first.
+ */
+export function WatercolourWash({ uid, accent }) {
+  const gradId = `wash-${uid}`;
+  const filterId = `torn-${uid}`;
+  const seed = [...uid].reduce((a, c) => a + c.charCodeAt(0), 0) % 97;
+
+  return (
+    <svg
+      className="h-full w-full"
+      viewBox="0 0 320 240"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <radialGradient id={`${gradId}-a`} cx="30%" cy="42%" r="62%">
+          <stop offset="0%" stopColor={accent} stopOpacity="0.30" />
+          <stop offset="100%" stopColor={accent} stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id={`${gradId}-b`} cx="72%" cy="58%" r="55%">
+          <stop offset="0%" stopColor={accent} stopOpacity="0.22" />
+          <stop offset="100%" stopColor={accent} stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id={`${gradId}-c`} cx="52%" cy="26%" r="46%">
+          <stop offset="0%" stopColor={accent} stopOpacity="0.16" />
+          <stop offset="100%" stopColor={accent} stopOpacity="0" />
+        </radialGradient>
+
+        <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.012 0.03"
+            numOctaves="3"
+            seed={seed}
+            result="noise"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="noise"
+            scale="22"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+      </defs>
+
+      {/* Flat base tint so the panel fills edge to edge — the displaced blobs
+          alone leave card-coloured gaps at the corners. */}
+      <rect width="320" height="240" fill={accent} opacity="0.10" />
+
+      <g filter={`url(#${filterId})`}>
+        <ellipse cx="150" cy="120" rx="170" ry="130" fill={`url(#${gradId}-a)`} />
+        <ellipse cx="205" cy="140" rx="140" ry="110" fill={`url(#${gradId}-b)`} />
+        <ellipse cx="160" cy="76" rx="120" ry="86" fill={`url(#${gradId}-c)`} />
+      </g>
+    </svg>
   );
 }
