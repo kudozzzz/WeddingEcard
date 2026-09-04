@@ -37,15 +37,47 @@ export const GALLERY_SIZES = {
 export const CLONE_LEAD = 2;
 
 /**
- * [last two, ...all, first two] — derived, never hardcoded.
- * With eight photos: 7,8,1,2,3,4,5,6,7,8,1,2
+ * '/img/gallery/gallery-6.webp' -> 6.
+ *
+ * The FILENAME number, which is not the array index: the set is 1,2,3,4,6,8,
+ * so index 4 is gallery-6. A tier that selects [3,4,6,8] means those four
+ * files, and resolving it any other way silently ships the wrong photographs.
  */
-export const LOOP = [
-  ...GALLERY.slice(-CLONE_LEAD),
-  ...GALLERY,
-  ...GALLERY.slice(0, CLONE_LEAD),
-];
+const numberOf = (src) => Number(src.match(/gallery-(\d+)\.webp$/)?.[1]);
 
-/** Map any strip position back to the real index in GALLERY. */
-export const realIndex = (pos) =>
-  ((pos - CLONE_LEAD) % GALLERY.length + GALLERY.length) % GALLERY.length;
+const BY_NUMBER = new Map(GALLERY.map((src) => [numberOf(src), src]));
+
+/**
+ * Resolve a tier's `gallery` field (data/versions.js) to real photo paths.
+ *
+ *   'all'      -> the whole GALLERY, in its existing order
+ *   [3, 4, 6]  -> those files, in the order listed
+ *   false      -> none, and the section is not mounted at all
+ *
+ * A number with no matching file is skipped silently — gallery-5 and gallery-7
+ * were removed from the set, and a stale reference must never render a gap or
+ * throw in a guest's face.
+ */
+export function selectGallery(spec) {
+  if (spec === 'all') return [...GALLERY];
+  if (!Array.isArray(spec)) return [];
+  return spec.map((n) => BY_NUMBER.get(n)).filter(Boolean);
+}
+
+/**
+ * Build the infinite-loop strip for one tier's photo list.
+ *
+ * [last `lead`, ...all, first `lead`] — every count is derived, so four photos
+ * on one tier and six on another use the identical code path. `lead` is capped
+ * at the set size: with fewer photos than CLONE_LEAD, slice(-2) would repeat
+ * the same photo twice in the lead and the seam maths would drift.
+ */
+export function buildLoop(photos) {
+  const lead = Math.min(CLONE_LEAD, photos.length);
+  return {
+    lead,
+    loop: [...photos.slice(-lead), ...photos, ...photos.slice(0, lead)],
+    /** Map any strip position back to the real index in `photos`. */
+    realIndex: (pos) => ((pos - lead) % photos.length + photos.length) % photos.length,
+  };
+}

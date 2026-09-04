@@ -1,33 +1,41 @@
 import { EVENTS } from './events.js';
+import { selectGallery } from './gallery.js';
 
 /**
  * Guest-tier versions — ONE codebase, ONE deploy, three URLs.
  *
- * Keyed by URL path. TOKEN_A and TOKEN_B are literal placeholders; the owner
- * substitutes the real values here and nowhere else. Everything downstream —
- * which events, which venues, which wardrobe tiles, whether the gallery exists,
- * and the sessionStorage namespace — is derived from this map, so a new tier or
- * a changed event list is a one-line edit.
+ * Keyed by URL path. Everything downstream — which events, which venues, which
+ * wardrobe tiles, which gallery photographs, and the sessionStorage namespace —
+ * is derived from this map, so a new tier or a changed list is a one-line edit.
  *
  * `events` lists event ids. It is a MEMBERSHIP set, not a running order: the
  * visible list is always rebuilt in the canonical EVENTS order
  * (Sangeet -> Haldi -> Wedding, CLAUDE.md §2), so nothing here can reorder the
  * page by accident.
+ *
+ * `gallery` is 'all', an array of FILENAME numbers, or false:
+ *
+ *   'all'        the whole GALLERY, in its existing order
+ *   [3, 4, 6, 8] those four files, in the order listed
+ *   false        the section is not mounted at all, and fetches nothing
+ *
+ * The numbers are filenames, NOT array indices — the set is 1,2,3,4,6,8, so
+ * index 5 is not gallery-6. See selectGallery in data/gallery.js.
  */
 export const VERSIONS = {
-  '/':        { events: ['wedding'],                     gallery: false },
-  '/TOKEN_A': { events: ['sangeet', 'wedding'],           gallery: true  },
-  '/TOKEN_B': { events: ['sangeet', 'haldi', 'wedding'],  gallery: true  },
+  '/':  { events: ['sangeet', 'haldi', 'wedding'], gallery: 'all' },
+  '/2': { events: ['sangeet', 'wedding'],          gallery: [3, 4, 6, 8] },
+  '/1': { events: ['wedding'],                     gallery: false },
 };
 
-/** Anything unrecognised falls back to the most restricted version. */
+/** Anything unrecognised falls back to '/'. */
 export const FALLBACK_PATH = '/';
 
 /**
- * '/TOKEN_A/' and '/TOKEN_A' are the same link as far as a guest is concerned —
- * WhatsApp and hand-typed URLs both produce trailing slashes. Everything else
- * (case, query, hash) is left alone: the tokens are exact strings, and a near
- * miss must fall back rather than half-match.
+ * '/2/' and '/2' are the same link as far as a guest is concerned — WhatsApp
+ * and hand-typed URLs both produce trailing slashes. Everything else (case,
+ * query, hash) is left alone: the keys are exact strings, and a near miss must
+ * fall back rather than half-match.
  */
 function normalise(pathname) {
   if (typeof pathname !== 'string' || pathname === '') return FALLBACK_PATH;
@@ -47,9 +55,15 @@ export function resolveVersion(pathname) {
   const config = VERSIONS[key];
   const allowed = new Set(config.events);
 
+  // Resolved to real paths here, so no component ever handles the raw spec.
+  // An empty result (false, or numbers that match no file) means the section is
+  // not mounted at all — never an empty strip.
+  const photos = selectGallery(config.gallery);
+
   return {
     path: key,
-    gallery: config.gallery,
+    photos,
+    gallery: photos.length > 0,
 
     /* The single list S4, S5 and S6 all render from. Filtered from EVENTS, so
        it keeps the canonical order regardless of how `events` above is written. */

@@ -1,35 +1,34 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  GALLERY,
-  GALLERY_SIZES,
-  LOOP,
-  CLONE_LEAD,
-  realIndex,
-} from '../data/gallery.js';
+import { GALLERY_SIZES, buildLoop } from '../data/gallery.js';
 import Reveal from './Reveal.jsx';
+import { useVersion } from '../lib/version.jsx';
 import { prefersReducedMotion } from '../lib/motion.js';
 
 /**
  * S7 — Our Gallery.
  *
  * Infinite horizontal loop in both directions, using the clone technique: the
- * strip renders the last CLONE_LEAD photos, then all of them, then the first
- * CLONE_LEAD. Counts are derived from GALLERY.length — nothing here is tied to
- * a specific number of photos. When a scroll settles inside a clone
- * zone, scrollLeft is silently shifted by exactly one full set, which lands on
- * the identical-looking real card. Snapping and smooth scrolling are turned off
- * for that single frame so the reposition is invisible.
+ * strip renders the last `lead` photos, then all of them, then the first
+ * `lead`. When a scroll settles inside a clone zone, scrollLeft is silently
+ * shifted by exactly one full set, which lands on the identical-looking real
+ * card. Snapping and smooth scrolling are turned off for that single frame so
+ * the reposition is invisible.
  *
- * The owner's sequence is never reordered — only wrapped.
+ * Which photographs appear is the guest tier's (data/versions.js). EVERY count
+ * below — set size, clone lead, loop length, dot count, lightbox wrap — is
+ * derived from that resolved list, so four photos on one tier and six on
+ * another run the identical code path with nothing special-cased.
+ *
+ * The owner's sequence is never reordered — only selected from, and wrapped.
  * gallery-3 is landscape; object-cover handles it, no special case.
  */
-
-/* Everything about the loop is derived from GALLERY.length in data/gallery.js. */
-const SET = GALLERY.length;
-const LEAD = CLONE_LEAD;
-
 export default function Gallery() {
+  const { photos } = useVersion();
+  // photos is referentially stable — the version resolves once, at mount.
+  const { lead, loop, realIndex } = useMemo(() => buildLoop(photos), [photos]);
+  const set = photos.length;
+
   const [openAt, setOpenAt] = useState(null);
   const [active, setActive] = useState(0);
   const stripRef = useRef(null);
@@ -42,10 +41,10 @@ export default function Gallery() {
   /** Nearest strip position to the current scroll centre. */
   const nearestPos = useCallback(() => {
     const strip = stripRef.current;
-    if (!strip) return LEAD;
+    if (!strip) return lead;
     const centre = strip.scrollLeft + strip.clientWidth / 2;
     const figs = [...strip.querySelectorAll('figure')];
-    let best = LEAD;
+    let best = lead;
     let bestDist = Infinity;
     figs.forEach((fig, i) => {
       const d = Math.abs(fig.offsetLeft + fig.offsetWidth / 2 - centre);
@@ -55,20 +54,20 @@ export default function Gallery() {
       }
     });
     return best;
-  }, []);
+  }, [lead]);
 
   /* Start on the first REAL image rather than on a leading clone. */
   useEffect(() => {
     const strip = stripRef.current;
     if (!strip) return;
     const figs = [...strip.querySelectorAll('figure')];
-    if (figs.length <= LEAD) return;
+    if (figs.length <= lead) return;
     const prevBehavior = strip.style.scrollBehavior;
     strip.style.scrollBehavior = 'auto';
-    strip.scrollLeft = centreOf(figs[LEAD], strip);
+    strip.scrollLeft = centreOf(figs[lead], strip);
     strip.style.scrollBehavior = prevBehavior;
     setActive(0);
-  }, []);
+  }, [lead]);
 
   /**
    * If the scroll settled on a clone, hop one full set so we are on the real
@@ -80,20 +79,20 @@ export default function Gallery() {
     const strip = stripRef.current;
     if (!strip) return;
     const figs = [...strip.querySelectorAll('figure')];
-    if (figs.length < LOOP.length) return;
+    if (figs.length < loop.length) return;
 
     const pos = nearestPos();
     setActive(realIndex(pos));
 
-    // +/-1 SET, not +/-SET cards: setWidth below is already the width of one
-    // whole set, so anything larger overshoots and slams into the scroll
-    // boundary instead of hopping one period.
+    // +/-1 whole set, not +/-`set` cards: setWidth below is already the width
+    // of one whole set, so anything larger overshoots and slams into the
+    // scroll boundary instead of hopping one period.
     let delta = 0;
-    if (pos < LEAD) delta = 1;
-    else if (pos >= LEAD + SET) delta = -1;
+    if (pos < lead) delta = 1;
+    else if (pos >= lead + set) delta = -1;
     if (delta === 0) return;
 
-    const setWidth = centreOf(figs[LEAD + SET], strip) - centreOf(figs[LEAD], strip);
+    const setWidth = centreOf(figs[lead + set], strip) - centreOf(figs[lead], strip);
     const prevSnap = strip.style.scrollSnapType;
     const prevBehavior = strip.style.scrollBehavior;
     strip.style.scrollSnapType = 'none';
@@ -105,7 +104,7 @@ export default function Gallery() {
       strip.style.scrollSnapType = prevSnap;
       strip.style.scrollBehavior = prevBehavior;
     });
-  }, [nearestPos]);
+  }, [nearestPos, lead, set, loop.length, realIndex]);
 
   /**
    * scrollend where supported, debounced scroll everywhere else — scrollend is
@@ -130,7 +129,7 @@ export default function Gallery() {
       if (hasScrollEnd) strip.removeEventListener('scrollend', normalise);
       clearTimeout(settleTimer.current);
     };
-  }, [normalise, nearestPos]);
+  }, [normalise, nearestPos, realIndex]);
 
   return (
     <section id="gallery" className="section-y relative z-10">
@@ -144,10 +143,10 @@ export default function Gallery() {
           className="hidden-scrollbar flex snap-x snap-mandatory overflow-x-auto px-6 pb-2"
           style={{ WebkitOverflowScrolling: 'touch', gap: '1rem' }}
         >
-          {LOOP.map((src, pos) => {
+          {loop.map((src, pos) => {
             const size = GALLERY_SIZES[src];
             const real = realIndex(pos);
-            const isClone = pos < LEAD || pos >= LEAD + SET;
+            const isClone = pos < lead || pos >= lead + set;
             return (
               <figure
                 key={`${src}-${pos}`}
@@ -170,7 +169,7 @@ export default function Gallery() {
                   alt={isClone ? '' : `Ankit and Srishti, photograph ${real + 1}`}
                   width={size.w}
                   height={size.h}
-                  loading={pos === LEAD ? 'eager' : 'lazy'}
+                  loading={pos === lead ? 'eager' : 'lazy'}
                   decoding="async"
                   className="aspect-[3/4] w-full object-cover"
                 />
@@ -182,7 +181,7 @@ export default function Gallery() {
 
       <Reveal>
         <div className="mt-5 flex justify-center gap-2" aria-hidden="true">
-          {GALLERY.map((src, i) => (
+          {photos.map((src, i) => (
             <span
               key={src}
               className="block rounded-full"
@@ -198,7 +197,9 @@ export default function Gallery() {
         </div>
       </Reveal>
 
-      {openAt !== null && <Lightbox startIndex={openAt} onClose={() => setOpenAt(null)} />}
+      {openAt !== null && (
+        <Lightbox photos={photos} startIndex={openAt} onClose={() => setOpenAt(null)} />
+      )}
     </section>
   );
 }
@@ -210,16 +211,16 @@ export default function Gallery() {
  * and a transformed ancestor becomes the containing block for position:fixed,
  * which would trap this inside the section instead of filling the viewport.
  */
-function Lightbox({ startIndex, onClose }) {
+function Lightbox({ photos, startIndex, onClose }) {
   const [i, setI] = useState(startIndex);
   const touchX = useRef(null);
   const touchY = useRef(null);
   const reduced = prefersReducedMotion();
 
-  /** Modulo both ways: past 4 wraps to 1, back from 1 wraps to 4. */
+  /** Modulo both ways: past the last wraps to the first, and back again. */
   const go = useCallback((delta) => {
-    setI((prev) => (prev + delta + GALLERY.length) % GALLERY.length);
-  }, []);
+    setI((prev) => (prev + delta + photos.length) % photos.length);
+  }, [photos.length]);
 
   /* Lock body scroll, and restore the exact position on close. */
   useEffect(() => {
@@ -280,13 +281,13 @@ function Lightbox({ startIndex, onClose }) {
     }
   };
 
-  const size = GALLERY_SIZES[GALLERY[i]];
+  const size = GALLERY_SIZES[photos[i]];
 
   return createPortal(
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`Photograph ${i + 1} of ${GALLERY.length}`}
+      aria-label={`Photograph ${i + 1} of ${photos.length}`}
       onClick={onClose}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
@@ -303,8 +304,8 @@ function Lightbox({ startIndex, onClose }) {
       `}</style>
 
       <img
-        key={GALLERY[i]}
-        src={GALLERY[i]}
+        key={photos[i]}
+        src={photos[i]}
         alt={`Ankit and Srishti, photograph ${i + 1}`}
         width={size.w}
         height={size.h}
@@ -318,7 +319,7 @@ function Lightbox({ startIndex, onClose }) {
         style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 22px)' }}
         aria-hidden="true"
       >
-        {GALLERY.map((src, n) => (
+        {photos.map((src, n) => (
           <span
             key={src}
             className="block rounded-full"

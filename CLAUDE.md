@@ -837,25 +837,34 @@ ornaments.
 Three audiences, **one codebase, one deploy, three URLs**. Not three projects,
 not three branches, not three folders.
 
-`src/data/versions.js` is the whole configuration and the only place the tokens
+`src/data/versions.js` is the whole configuration and the only place the paths
 appear:
 
 | Path | Events | Gallery |
 |---|---|---|
-| `/` | Wedding | no |
-| `/TOKEN_A` | Sangeet, Wedding | yes |
-| `/TOKEN_B` | Sangeet, Haldi, Wedding | yes |
+| `/` | Sangeet, Haldi, Wedding | `'all'` — all six |
+| `/2` | Sangeet, Wedding | `[3, 4, 6, 8]` — those four |
+| `/1` | Wedding | `false` — section not mounted |
 
-`TOKEN_A` / `TOKEN_B` are literal placeholders. Substitute the real values in
-that file and nowhere else.
+**`gallery` is `'all'`, an array of filename numbers, or `false`.** The numbers
+are **filenames, not array indices** — the surviving set is 1, 2, 3, 4, 6, 8
+(gallery-5 and gallery-7 were removed), so index 5 is not `gallery-6`.
+`selectGallery` in `data/gallery.js` resolves them through a filename map and
+**skips a number with no matching file silently**, rather than rendering a gap
+or throwing at a guest. A tier whose selection resolves to nothing is treated
+exactly like `false`: the section is not mounted, never mounted empty.
 
 **Resolution.** `window.location.pathname` is read **once**, at mount, through
 `useResolvedVersion()` (a `useState` lazy initialiser, so no re-render can
 re-read it). There is no router. The resolved object goes down the tree via
 context; components read it with `useVersion()`. A trailing slash is tolerated;
-**anything else unrecognised falls back to `/`, the most restricted version** —
-including a near-miss on case. The context default is also `/`, so a component
-rendered outside the provider shows less, never more.
+**anything else unrecognised falls back to `/`** — including a near-miss on
+case. The context default is `/` too, so a component rendered outside the
+provider still renders something coherent.
+
+> Note that `/` is now the **fullest** tier, not the most restricted, so an
+> unrecognised path shows everything. That is the owner's decision: the plain
+> domain is the family link. The restricted tiers are the ones behind a path.
 
 **What the config drives.** S4, S5 and S6 all map over the *same*
 `visibleEvents` list — none of them holds its own copy, so a venue can never
@@ -864,6 +873,13 @@ rebuilt by filtering `EVENTS`, so it keeps the canonical Sangeet → Haldi →
 Wedding order however `events:` is written. S7 is gated at the `App` level with
 `{version.gallery && <Gallery />}` — **unmounted, not hidden**, so a tier
 without the gallery fetches none of its photographs.
+
+S7 renders `version.photos`, the tier's resolved list. Every count in that
+component — set size, clone lead, loop length, dot count, lightbox wrap — is
+derived from it, so four photos and six run the identical code path. Verified
+at both counts: hopping out of a clone zone in either direction lands on the
+identical image with **0px drift** and a shift of exactly one set (1174px at
+four photos, 1761px at six), and real cards never hop.
 
 `CARD_GRID` / `VENUE_GRID` / `TILE_GRID` pick the column count and container
 width from the number of visible cards, so a one-event tier does not leave a
@@ -880,7 +896,7 @@ whichever link a guest receives — a differentiated OG title would tell a guest
 which tier they were given.
 
 **sessionStorage is namespaced per tier**: every key is written as
-`<path>|<name>` (`/|envelopeOpened`, `/TOKEN_B|dateRevealed`, …) through
+`<path>|<name>` (`/|envelopeOpened`, `/2|dateRevealed`, …) through
 `useSessionStore()`. No component calls `sessionStorage` directly any more.
 The tier itself is **never stored** — it is resolved from the URL on every load,
 so no cached value can ever serve one guest another tier's content.
