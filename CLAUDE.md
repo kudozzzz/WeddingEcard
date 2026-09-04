@@ -513,12 +513,13 @@ the same page.
 - Button: outlined in `--gold`, small caps, with a small pin icon. `href={maps}`,
   `target="_blank"`, `rel="noopener noreferrer"`. Fills with `--gold` and white text on hover/press.
 - Photos: `loading="lazy"`, `decoding="async"`, explicit `width`/`height` to prevent layout shift.
-- **`photo: null` (Madwa, a private home).** There is no photograph and it must not
-  borrow another venue's. The tile renders the same `WatercolourWash` S4 falls back
-  to, in the event accent, at the identical `aspect-[4/3]` so the tile keeps its
-  shape. The wash lives in `Ornaments.jsx` because both sections use it; its `uid`
-  prop must be unique per instance (`event-<id>` / `venue-<id>`) or the two copies
-  emit duplicate SVG def ids and every `url(#…)` resolves to whichever painted first.
+- **S5 shows only events that have a venue photograph.** The list is still derived
+  from the tier's `visibleEvents`, narrowed by one more condition — `event.photo`,
+  never an id. Madwa is held at a private home and carries `photo: null`, so it
+  drops out on its own, and any future event without a venue photograph does the
+  same with no code change. Those events still appear in full in S4 and S6; this
+  section is only about places a guest travels to. Do not reintroduce a
+  placeholder tile for them.
 
 ### S6 — Wedding Wardrobe
 
@@ -895,9 +896,11 @@ provider still renders something coherent.
 > unrecognised path shows everything. That is the owner's decision: the plain
 > domain is the family link. The restricted tiers are the ones behind a path.
 
-**What the config drives.** S4, S5 and S6 all map over the *same*
+**What the config drives.** S4, S5 and S6 all derive from the *same*
 `visibleEvents` list — none of them holds its own copy, so a venue can never
-outlive its event and the Haldi palette cannot appear without Haldi. The list is
+outlive its event and the Haldi palette cannot appear without Haldi. S5 alone
+narrows it further, to the events that have a venue photograph (§S5), so its
+tile count can legitimately be lower than S4's and S6's. The list is
 rebuilt by filtering `EVENTS`, so it keeps the canonical Sangeet → Haldi →
 Wedding order however `events:` is written. S7 is gated at the `App` level with
 `{version.gallery && <Gallery />}` — **unmounted, not hidden**, so a tier

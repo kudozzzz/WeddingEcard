@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { IMAGE_SIZES } from '../data/events.js';
 import Reveal from './Reveal.jsx';
 import { useVersion } from '../lib/version.jsx';
-import { CornerOrnaments, PinIcon, WatercolourWash } from './Ornaments.jsx';
+import { CornerOrnaments, PinIcon } from './Ornaments.jsx';
 
 /**
  * S5 — The Venue.
@@ -9,12 +10,22 @@ import { CornerOrnaments, PinIcon, WatercolourWash } from './Ornaments.jsx';
  * Same card shell as S4. Photos carry explicit width/height so the box is
  * reserved before decode, and everything below the fold is lazy (§7).
  *
- * One tile per VISIBLE event (data/versions.js) — the venue list is derived
- * from the events, never held separately, so a venue can never outlive the
- * event that hosts it.
+ * One tile per visible event that HAS A VENUE PHOTOGRAPH. The list is still
+ * derived from the tier's events (data/versions.js), never held separately, so a
+ * venue can never outlive the event that hosts it — it is simply narrowed by one
+ * more condition.
+ *
+ * That condition is `photo`, not an id: Madwa is held at a private home and has
+ * `photo: null`, so it drops out on its own, and any future event without a venue
+ * photograph does the same with no code change. The event itself still appears in
+ * full in S4 and S6 — only this section is about places you travel to.
  */
 export default function Venues() {
   const { visibleEvents } = useVersion();
+  const venues = useMemo(
+    () => visibleEvents.filter((event) => event.photo),
+    [visibleEvents],
+  );
 
   return (
     <section id="venues" className="section-y relative z-10 px-6">
@@ -22,8 +33,8 @@ export default function Venues() {
         The Venue
       </Reveal>
 
-      <div className={`mx-auto grid gap-6 ${VENUE_GRID[visibleEvents.length] ?? VENUE_GRID[3]}`}>
-        {visibleEvents.map((event, i) => (
+      <div className={`mx-auto grid gap-6 ${VENUE_GRID[venues.length] ?? VENUE_GRID[3]}`}>
+        {venues.map((event, i) => (
           <Reveal key={event.id} index={i}>
             <VenueTile event={event} />
           </Reveal>
@@ -42,28 +53,20 @@ const VENUE_GRID = {
 };
 
 function VenueTile({ event }) {
-  const size = event.photo ? IMAGE_SIZES[event.photo] : null;
+  // Guaranteed present: Venues filters on `photo` before rendering any tile.
+  const size = IMAGE_SIZES[event.photo];
 
   return (
     <article className="paper-card relative overflow-hidden rounded-2xl">
-      {/* A private home has no photograph and must not borrow another
-          venue's. The same watercolour wash S4 uses stands in for it, in the
-          event accent, at the identical 4:3 so the tile keeps its shape. */}
-      {event.photo ? (
-        <img
-          src={event.photo}
-          alt={event.venue}
-          width={size.w}
-          height={size.h}
-          loading="lazy"
-          decoding="async"
-          className="aspect-[4/3] w-full rounded-t-2xl object-cover"
-        />
-      ) : (
-        <div className="aspect-[4/3] w-full overflow-hidden rounded-t-2xl">
-          <WatercolourWash uid={`venue-${event.id}`} accent={event.accent} />
-        </div>
-      )}
+      <img
+        src={event.photo}
+        alt={event.venue}
+        width={size.w}
+        height={size.h}
+        loading="lazy"
+        decoding="async"
+        className="aspect-[4/3] w-full rounded-t-2xl object-cover"
+      />
 
       <div className="relative px-6 pb-7 pt-5 text-center">
         <CornerOrnaments inset={10} size={16} />

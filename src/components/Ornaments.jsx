@@ -410,11 +410,10 @@ export function JaalWatermark({ radius = 0 }) {
  * through a displacement map so the edges bleed like paint rather than ending
  * on a straight line.
  *
- * Two callers, two jobs: S4 falls back to it when an event's art file is
- * missing, and S5 uses it deliberately for a venue that has no photograph (a
- * private home). `uid` must be unique per instance — the same event rendered in
- * both sections would otherwise emit duplicate SVG def ids, and every
- * url(#...) in the document would resolve to whichever painted first.
+ * Used by S4 as the fallback when an event's art file is missing, so a card
+ * never shows a broken image. `uid` must be unique per instance: two of these
+ * on one page would otherwise emit duplicate SVG def ids, and every url(#...)
+ * in the document would resolve to whichever painted first.
  */
 export function WatercolourWash({ uid, accent }) {
   const gradId = `wash-${uid}`;
